@@ -1,5 +1,6 @@
 use std::{ops::{Index, IndexMut, Mul, MulAssign, Add, Neg, Sub, AddAssign, SubAssign}, vec};
 
+#[derive(Clone)]
 pub struct Matrix  {
     col_: usize,  // w
     row_: usize,  // h
@@ -137,13 +138,13 @@ impl Neg for Matrix {
     }
 }
 
-impl Neg for &Matrix {
-    type Output = Matrix;
+// impl Neg for &Matrix {
+//     type Output = Matrix;
 
-    fn neg(self) -> Self::Output {
-        self.get_neg()
-    }
-}
+//     fn neg(self) -> Self::Output {
+//         self.get_neg()
+//     }
+// }
 
 impl Mul<Self> for Matrix {
     type Output = Self;
@@ -153,13 +154,13 @@ impl Mul<Self> for Matrix {
     }
 }
 
-impl Mul<Self> for &Matrix {
-    type Output = Matrix;
+// impl Mul<Self> for &Matrix {
+//     type Output = Matrix;
 
-    fn mul(self, rhs: Self) -> Self::Output {
-        self.multiply_mat(rhs)
-    }
-}
+//     fn mul(self, rhs: Self) -> Self::Output {
+//         self.multiply_mat(rhs)
+//     }
+// }
 
 impl Add for Matrix {
     type Output = Self;
@@ -169,13 +170,13 @@ impl Add for Matrix {
     }
 }
 
-impl Add for &Matrix {
-    type Output = Matrix;
+// impl Add for &Matrix {
+//     type Output = Matrix;
 
-    fn add(self, rhs: Self) -> Self::Output {
-        self.add_mat(rhs)
-    }
-}
+//     fn add(self, rhs: Self) -> Self::Output {
+//         self.add_mat(rhs)
+//     }
+// }
 
 impl AddAssign<Self> for Matrix {
     fn add_assign(&mut self, rhs: Self) {
@@ -183,11 +184,11 @@ impl AddAssign<Self> for Matrix {
     }
 }
 
-impl AddAssign<&Self> for Matrix {
-    fn add_assign(&mut self, rhs: &Self) {
-        self.add_mat_to_self(rhs)
-    }
-}
+// impl AddAssign<&Self> for Matrix {
+//     fn add_assign(&mut self, rhs: &Self) {
+//         self.add_mat_to_self(rhs)
+//     }
+// }
 
 impl Sub for Matrix {
     type Output = Self;
@@ -197,13 +198,13 @@ impl Sub for Matrix {
     }
 }
 
-impl Sub for &Matrix {
-    type Output = Matrix;
+// impl Sub for &Matrix {
+//     type Output = Matrix;
 
-    fn sub(self, rhs: Self) -> Self::Output {
-        self + &-rhs
-    }
-}
+//     fn sub(self, rhs: Self) -> Self::Output {
+//         self + &-rhs
+//     }
+// }
 
 impl SubAssign for Matrix {
     fn sub_assign(&mut self, rhs: Self) {
@@ -211,11 +212,11 @@ impl SubAssign for Matrix {
     }
 }
 
-impl SubAssign<&Self> for Matrix {
-    fn sub_assign(&mut self, rhs: &Self) {
-        self.add_mat_to_self(&-rhs);
-    }
-}
+// impl SubAssign<&Self> for Matrix {
+//     fn sub_assign(&mut self, rhs: &Self) {
+//         self.add_mat_to_self(&-rhs);
+//     }
+// }
 
 impl MulAssign<Self> for Matrix {
     fn mul_assign(&mut self, rhs: Self) {
@@ -223,11 +224,11 @@ impl MulAssign<Self> for Matrix {
     }
 }
 
-impl MulAssign<&Self> for Matrix {
-    fn mul_assign(&mut self, rhs: &Self) {
-        *self = self.multiply_mat(&rhs);
-    }
-}
+// impl MulAssign<&Self> for Matrix {
+//     fn mul_assign(&mut self, rhs: &Self) {
+//         *self = self.multiply_mat(&rhs);
+//     }
+// }
 
 impl MulAssign<f32> for Matrix {
     fn mul_assign(&mut self, rhs: f32) {
