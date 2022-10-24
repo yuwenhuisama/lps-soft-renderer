@@ -1,4 +1,7 @@
+use crate::lps::common::vertex::Vertex;
+
 pub trait VertexShader {
+    fn handle(&self, vertex: &Vertex) -> Vertex;
 }
 
 pub trait PixelShader {
