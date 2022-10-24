@@ -9,7 +9,7 @@ pub struct Matrix  {
 }
 
 impl Matrix {
-    pub fn newWithZero(col: usize, row: usize) -> Matrix {
+    pub fn new_with_zero(col: usize, row: usize) -> Matrix {
         assert!(row > 0 && col > 0);
         Matrix {
             row_: row,
@@ -18,7 +18,7 @@ impl Matrix {
         }
     }
 
-    pub fn newWithInit(col: usize, row: usize, mat:Vec::<f32>) -> Matrix {
+    pub fn new_with_init(col: usize, row: usize, mat:Vec::<f32>) -> Matrix {
         assert_eq!(row * col, mat.len());
         Matrix { 
             row_: row,
@@ -35,12 +35,6 @@ impl Matrix {
         self.row_
     }
 
-    pub fn set(&mut self, x: usize, y: usize, val: f32) {
-        assert!(x < self.height() && y < self.width());
-        let idx = x * self.width() + y;
-        self.matrix_[idx] = val;
-    }
-
     pub fn row(&self) -> usize {
         self.row_
     }
@@ -49,6 +43,12 @@ impl Matrix {
         self.col_
     }
 
+    pub fn set(&mut self, x: usize, y: usize, val: f32) {
+        assert!(x < self.height() && y < self.width());
+        let idx = x * self.width() + y;
+        self.matrix_[idx] = val;
+    }
+    
     pub fn at(&self, x: usize, y: usize) -> f32 {
         let idx = x * self.col_ + y;
         assert!(idx < self.matrix_.len(), "x={}, y={}, col={}, row={}", x, y, self.col_, self.row_);
@@ -56,7 +56,7 @@ impl Matrix {
     }
 
     fn multiply_scalar(&self, n: f32) -> Matrix {
-        let mut res = Matrix::newWithZero(self.column(), self.row());
+        let mut res = Matrix::new_with_zero(self.column(), self.row());
 
         let mut idx = 0;
         for ele in &self.matrix_ {
@@ -67,7 +67,7 @@ impl Matrix {
         return res;
     }
 
-    fn get_neg(&self) -> Matrix {
+    fn to_neg(&self) -> Matrix {
         let len = self.matrix_.len();
         let mut mat = vec![0.0; len];
 
@@ -75,7 +75,7 @@ impl Matrix {
             mat[i] = -self.matrix_[i];
         }
 
-        Matrix::newWithInit(self.column(), self.column(), mat)
+        Matrix::new_with_init(self.column(), self.column(), mat)
     }
 
     fn add_mat(&self, other: &Matrix) -> Matrix {
@@ -87,7 +87,7 @@ impl Matrix {
             mat[i] = self.matrix_[i] + other.matrix_[i];
         }
 
-        Matrix::newWithInit(self.column(), self.column(), mat)
+        Matrix::new_with_init(self.column(), self.column(), mat)
     }
 
     fn add_mat_to_self(&mut self, other: &Matrix) {
@@ -102,7 +102,7 @@ impl Matrix {
     fn multiply_mat(&self, other: &Matrix) -> Matrix {
         assert_eq!(self.width(), other.height());
 
-        let mut res = Matrix::newWithZero(self.height(), other.width());
+        let mut res = Matrix::new_with_zero(self.height(), other.width());
 
         for i in 0..self.height() {
             for j in 0..other.width() {
@@ -134,7 +134,7 @@ impl Neg for Matrix {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        self.get_neg()
+        self.to_neg()
     }
 }
 
