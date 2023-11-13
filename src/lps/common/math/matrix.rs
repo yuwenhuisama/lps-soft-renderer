@@ -1,5 +1,7 @@
 use std::{ops::{Index, IndexMut, Mul, MulAssign, Add, Neg, Sub, AddAssign, SubAssign}, vec};
 
+use super::vec4::Vec4;
+
 #[derive(Clone)]
 pub struct Matrix  {
     col_: usize,  // w
@@ -62,6 +64,22 @@ impl Matrix {
         for ele in &self.matrix_ {
             idx += 1;
             res.matrix_[idx] = *ele * n;
+        }
+
+        return res;
+    }
+
+    fn multiply_vec4(&self, vec: &Vec4) -> Vec4 {
+        assert_eq!(self.width(), 4);
+
+        let mut res = Vec4::new(0.0, 0.0, 0.0, 0.0);
+
+        for i in 0..self.height() {
+            let idx = i * self.width();
+            res.x += self.matrix_[idx] * vec.x;
+            res.y += self.matrix_[idx + 1] * vec.y;
+            res.z += self.matrix_[idx + 2] * vec.z;
+            res.w += self.matrix_[idx + 3] * vec.w;
         }
 
         return res;
@@ -151,6 +169,14 @@ impl Mul<Self> for Matrix {
 
     fn mul(self, rhs: Self) -> Self::Output {
         self.multiply_mat(&rhs)
+    }
+}
+
+impl Mul<Vec4> for Matrix {
+    type Output = Vec4;
+
+    fn mul(self, rhs: Vec4) -> Self::Output {
+        self.multiply_vec4(&rhs)
     }
 }
 

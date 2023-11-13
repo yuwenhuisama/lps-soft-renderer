@@ -1,7 +1,6 @@
 mod lps;
 
 use std::sync::{Arc, Mutex, Condvar};
-use std::thread;
 use lps::core::{gpu::Gpu, cpu::Cpu, bus::Bus};
 
 use crate::lps::core::common::Unit;

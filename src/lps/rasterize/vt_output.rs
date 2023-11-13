@@ -1,4 +1,4 @@
-use super::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
+use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
 
 #[derive(Copy, Clone)]
 pub struct VertexShaderOutput {
