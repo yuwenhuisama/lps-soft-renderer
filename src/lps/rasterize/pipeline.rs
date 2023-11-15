@@ -1,5 +1,5 @@
-use std::{any::Any, sync::Arc};
 use crate::lps::common::math::vec4::Vec4;
+use std::{any::Any, sync::Arc};
 
 pub type Color = Vec4;
 
@@ -31,15 +31,25 @@ impl<'a, VSInput, VSOutput> PipeLine<VSInput, VSOutput> {
         }
     }
 
-    pub fn bind_vertex_shader(&mut self, shader: Option<Box<dyn VertexShader<VSInput, VSOutput> + Send + Sync>>) {
+    pub fn bind_vertex_shader(
+        &mut self,
+        shader: Option<Box<dyn VertexShader<VSInput, VSOutput> + Send + Sync>>,
+    ) {
         self.vertex_shader = shader;
     }
 
-    pub fn bind_pixel_shader(&mut self, shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>) {
+    pub fn bind_pixel_shader(
+        &mut self,
+        shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>,
+    ) {
         self.pixel_shader = shader;
     }
 
-    pub fn handle_vertex_shader(&mut self, vertex: &VSInput, constant_buffer: &Vec<Option<Arc<dyn Any + Send>>>) -> VSOutput {
+    pub fn handle_vertex_shader(
+        &mut self,
+        vertex: &VSInput,
+        constant_buffer: &Vec<Option<Arc<dyn Any + Send>>>,
+    ) -> VSOutput {
         if let None = self.vertex_shader {
             panic!("vertex shader is not bound");
         }

@@ -32,7 +32,7 @@ impl VertexShaderOutput {
             Vec4::lerp(v1.window_pos, v2.window_pos, factor),
             Vec4::lerp(v1.color, v2.color, factor),
             Vec2::lerp(v1.texcoord, v2.texcoord, factor),
-            Vec3::lerp(v1.normal, v2.normal, factor)
+            Vec3::lerp(v1.normal, v2.normal, factor),
         )
     }
 }

@@ -10,9 +10,7 @@ pub struct SetRenderTargetCmd {
 
 impl<'a> SetRenderTargetCmd {
     pub fn new(render_target: Arc<Mutex<RenderTarget>>) -> SetRenderTargetCmd {
-        SetRenderTargetCmd {
-            render_target,
-        }
+        SetRenderTargetCmd { render_target }
     }
 }
 

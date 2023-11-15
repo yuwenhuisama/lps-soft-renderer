@@ -1,8 +1,10 @@
+use super::{
+    pipeline::{Color, PixelShader},
+    vt_output::VertexShaderOutput,
+};
 use std::{any::Any, sync::Arc};
-use super::{pipeline::{Color, PixelShader}, vt_output::VertexShaderOutput};
 
-pub struct CustomPixelShader {
-}
+pub struct CustomPixelShader {}
 
 impl CustomPixelShader {
     pub fn new() -> CustomPixelShader {
@@ -15,6 +17,5 @@ impl PixelShader<VertexShaderOutput> for CustomPixelShader {
         pixel_fragment.color
     }
 
-    fn init_constant_buffer(&mut self, _: &Vec<Option<Arc<dyn Any + Send>>>) {
-    }
+    fn init_constant_buffer(&mut self, _: &Vec<Option<Arc<dyn Any + Send>>>) {}
 }

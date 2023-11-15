@@ -1,12 +1,12 @@
-use std::sync::{Mutex, Arc};
-use std::thread::{self, Scope};
 use crate::lps::rasterize::render_cmds::render_cmd::RenderCmd;
+use std::sync::{Arc, Mutex};
+use std::thread::{self, Scope};
 
 use super::bus::{BusMutex, ExitNotifyCondVar};
 use super::common::Unit;
 
 pub struct Cpu<'a> {
-    bus_mutex: &'a BusMutex<'a> ,
+    bus_mutex: &'a BusMutex<'a>,
     exit_condvar: &'a ExitNotifyCondVar,
     exit_flag: Arc<Mutex<bool>>,
 }
@@ -26,8 +26,7 @@ impl<'a> Cpu<'a> {
     }
 
     /// Let Cpu wait for Gpu compleate render.
-    pub fn swap(&self) {
-    }
+    pub fn swap(&self) {}
 }
 
 impl<'a> Unit<'a> for Cpu<'a> {
@@ -48,7 +47,7 @@ impl<'a> Unit<'a> for Cpu<'a> {
         }
 
         let exit_condivar = ExitNotifyCondVar::clone(self.exit_condvar);
-       
+
         let (lock, condvar) = exit_condivar.as_ref();
         let mut cnt = lock.lock().unwrap();
         *cnt -= 1;

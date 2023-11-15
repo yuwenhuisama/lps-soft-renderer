@@ -1,12 +1,12 @@
-use std::ops::{Index, IndexMut, Mul, MulAssign, Add, Neg, Sub, AddAssign, SubAssign};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use super::vec4::Vec4;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Mat4x4 {
     col_: usize, // w
-    row_: usize,  // h
-    matrix: [f32; 4 * 4]
+    row_: usize, // h
+    matrix: [f32; 4 * 4],
 }
 
 impl Mat4x4 {
@@ -66,7 +66,14 @@ impl Mat4x4 {
 
     pub fn at(&self, x: usize, y: usize) -> f32 {
         let idx = x * self.col_ + y;
-        assert!(idx < self.matrix.len(), "x={}, y={}, col={}, row={}", x, y, self.col_, self.row_);
+        assert!(
+            idx < self.matrix.len(),
+            "x={}, y={}, col={}, row={}",
+            x,
+            y,
+            self.col_,
+            self.row_
+        );
         self.matrix[idx]
     }
 

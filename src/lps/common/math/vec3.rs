@@ -1,4 +1,4 @@
-use std::ops::{Mul, Add};
+use std::ops::{Add, Mul};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec3 {
@@ -19,8 +19,8 @@ impl Vec3 {
         Vec3::new(self.x * n, self.y * n, self.z * n)
     }
 
-    pub fn do_add(&self, other: &Vec3) -> Vec3{
-        Vec3::new(self.x + other.x , self.y + other.y, self.z + other.z)
+    pub fn do_add(&self, other: &Vec3) -> Vec3 {
+        Vec3::new(self.x + other.x, self.y + other.y, self.z + other.z)
     }
 
     pub fn do_dot(&self, other: &Vec3) -> f32 {

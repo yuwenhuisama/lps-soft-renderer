@@ -1,16 +1,16 @@
 mod lps;
 
-use std::any::Any;
-use std::sync::{Arc, Mutex, Condvar};
-use std::thread;
-use lps::core::{gpu::Gpu, cpu::Cpu, bus::Bus};
-use lps::rasterize::vertex_shader::CustomVertexShader;
-use lps::rasterize::pixel_shader::CustomPixelShader;
 use crate::lps::common::color::Color;
 use crate::lps::common::math::mat4x4::Mat4x4;
 use crate::lps::common::math::vec2::Vec2;
 use crate::lps::common::math::vec3::Vec3;
 use crate::lps::common::math::vec4::Vec4;
+use lps::core::{bus::Bus, cpu::Cpu, gpu::Gpu};
+use lps::rasterize::pixel_shader::CustomPixelShader;
+use lps::rasterize::vertex_shader::CustomVertexShader;
+use std::any::Any;
+use std::sync::{Arc, Condvar, Mutex};
+use std::thread;
 
 use crate::lps::core::common::Unit;
 use crate::lps::rasterize::render_cmds::draw::Draw;
@@ -53,10 +53,8 @@ fn do_render(cpu: &mut Cpu) {
     );
 
     let render_target = Arc::new(Mutex::new(RenderTarget::new(800, 600)));
-    let vertex_list: Vec<Arc<dyn Any + Send + Sync>> = vec![
-        Arc::new(v1),
-        Arc::new(v2),
-        Arc::new(v3)];
+    let vertex_list: Vec<Arc<dyn Any + Send + Sync>> =
+        vec![Arc::new(v1), Arc::new(v2), Arc::new(v3)];
 
     let mut unwrap = render_target.lock().unwrap();
     unwrap.clear(Color::BLUE);
@@ -77,7 +75,9 @@ fn do_render(cpu: &mut Cpu) {
         Mat4x4::identity(),
     ))); // proj matrix
 
-    cpu.add_cmd(Box::new(SetRenderTargetCmd::new(Arc::clone(&render_target))));
+    cpu.add_cmd(Box::new(SetRenderTargetCmd::new(Arc::clone(
+        &render_target,
+    ))));
     cpu.add_cmd(Box::new(SetVertexBufferCmd::new(vertex_list)));
     cpu.add_cmd(Box::new(Draw::new()));
 
@@ -93,15 +93,13 @@ fn main() {
     let condvar_info = Arc::new((Mutex::<i32>::new(2), Condvar::new()));
 
     let mut cpu = Cpu::new(&bus, &condvar_info);
-    let mut gpu =
-        Gpu::<VertexShaderInput, VertexShaderOutput>::new(&bus, &condvar_info);
+    let mut gpu = Gpu::<VertexShaderInput, VertexShaderOutput>::new(&bus, &condvar_info);
 
     cpu.init();
     gpu.init();
 
     gpu.bind_vertex_shader(Box::new(CustomVertexShader::new()));
     gpu.bind_pixel_shader(Box::new(CustomPixelShader::new()));
-
 
     thread::scope(|scope| {
         let t1 = scope.spawn(|| {

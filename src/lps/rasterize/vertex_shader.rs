@@ -1,6 +1,6 @@
-use std::{any::Any, sync::Arc};
-use crate::lps::common::math::vec4::Vec4;
 use crate::lps::common::math::mat4x4::Mat4x4;
+use crate::lps::common::math::vec4::Vec4;
+use std::{any::Any, sync::Arc};
 
 use super::{pipeline::VertexShader, vt_input::VertexShaderInput, vt_output::VertexShaderOutput};
 
@@ -20,7 +20,7 @@ impl CustomVertexShader {
     }
 }
 
-impl VertexShader<VertexShaderInput, VertexShaderOutput> for CustomVertexShader  {
+impl VertexShader<VertexShaderInput, VertexShaderOutput> for CustomVertexShader {
     fn handle(&self, vertex: &VertexShaderInput) -> VertexShaderOutput {
         // todo: handle None condition
         let model_matrix = self.model_matrix_.as_ref().unwrap();
@@ -37,8 +37,29 @@ impl VertexShader<VertexShaderInput, VertexShaderOutput> for CustomVertexShader 
     }
 
     fn init_constant_buffer(&mut self, buffer: &Vec<Option<Arc<dyn Any + Send>>>) {
-        self.model_matrix_ = Some(buffer[0].as_ref().unwrap().downcast_ref::<Mat4x4>().unwrap().clone());
-        self.view_matrix_ = Some(buffer[1].as_ref().unwrap().downcast_ref::<Mat4x4>().unwrap().clone());
-        self.proj_matrix_ = Some(buffer[2].as_ref().unwrap().downcast_ref::<Mat4x4>().unwrap().clone());
+        self.model_matrix_ = Some(
+            buffer[0]
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<Mat4x4>()
+                .unwrap()
+                .clone(),
+        );
+        self.view_matrix_ = Some(
+            buffer[1]
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<Mat4x4>()
+                .unwrap()
+                .clone(),
+        );
+        self.proj_matrix_ = Some(
+            buffer[2]
+                .as_ref()
+                .unwrap()
+                .downcast_ref::<Mat4x4>()
+                .unwrap()
+                .clone(),
+        );
     }
 }

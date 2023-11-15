@@ -4,12 +4,12 @@ use crate::lps::rasterize::render_cmds::render_cmd::{RenderCmd, RenderCommandTyp
 pub struct Draw {}
 
 impl<'a> Draw {
-    pub fn new() -> Draw  {
+    pub fn new() -> Draw {
         Draw {}
     }
 }
 
-impl RenderCmd  for Draw  {
+impl RenderCmd for Draw {
     fn cmd_type(&self) -> RenderCommandType {
         RenderCommandType::Draw
     }

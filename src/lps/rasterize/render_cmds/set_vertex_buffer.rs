@@ -1,17 +1,15 @@
-use std::any::Any;
-use std::sync::Arc;
 use crate::lps::core::gpu::GpuApi;
 use crate::lps::rasterize::render_cmds::render_cmd::{RenderCmd, RenderCommandType};
+use std::any::Any;
+use std::sync::Arc;
 
 pub struct SetVertexBufferCmd {
     pub vertex_list: Vec<Arc<dyn Any + Send + Sync>>,
 }
 
 impl SetVertexBufferCmd {
-    pub fn new (vertex_list: Vec<Arc<dyn Any + Send + Sync>>) -> SetVertexBufferCmd {
-        SetVertexBufferCmd {
-            vertex_list,
-        }
+    pub fn new(vertex_list: Vec<Arc<dyn Any + Send + Sync>>) -> SetVertexBufferCmd {
+        SetVertexBufferCmd { vertex_list }
     }
 }
 
