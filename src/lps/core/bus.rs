@@ -1,27 +1,27 @@
 use std::{collections::VecDeque, sync::{Arc, Mutex, Condvar}};
-use super::commands::{RenderCommand};
+use crate::lps::rasterize::render_cmds::render_cmd::RenderCmd;
 
 pub enum BusPopRes {
-    Ok,
+    Succ,
     Failed,
 }
 
-pub struct Bus {
-    cmd_queue_: VecDeque<Box<dyn RenderCommand>>
+pub struct Bus<'a> {
+    cmd_queue_: VecDeque<Box<dyn RenderCmd<'a>>>
 }
 
-impl Bus {
-    pub fn new() -> Bus {
+impl<'a>  Bus<'a>  {
+    pub fn new() -> Bus<'a>  {
         Bus {
-            cmd_queue_: VecDeque::<Box<dyn RenderCommand>>::new()
+            cmd_queue_: VecDeque::<Box<dyn RenderCmd<'a> >>::new()
         }
     }
 
-    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCommand>) {
+    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCmd<'a> >) {
         self.cmd_queue_.push_back(cmd);
     }
 
-    pub fn try_get_cmd(&mut self) -> Result<Box<dyn RenderCommand>, BusPopRes> {
+    pub fn try_get_cmd(&mut self) -> Result<Box<dyn RenderCmd<'a> >, BusPopRes> {
         if let Some(res) = self.cmd_queue_.pop_front() {
             Ok(res)
         }
@@ -29,7 +29,11 @@ impl Bus {
             Err(BusPopRes::Failed)
         }
     }
+
+    pub fn empty(&self) -> bool {
+        self.cmd_queue_.is_empty()
+    }
 }
 
-pub type BusMutex = Arc<Mutex<Bus>>;
+pub type BusMutex<'a>  = Arc<Mutex<Bus<'a> >>;
 pub type ExitNotifyCondVar = Arc<(Mutex<i32>, Condvar)>;

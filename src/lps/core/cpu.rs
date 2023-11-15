@@ -1,28 +1,32 @@
 use std::thread;
+use crate::lps::rasterize::render_cmds::render_cmd::RenderCmd;
 
-use super::bus::{Bus, BusMutex, ExitNotifyCondVar};
+use super::bus::{BusMutex, ExitNotifyCondVar};
 use super::common::{Unit};
 
 pub struct Cpu<'a> {
-    cmd_bus: &'a BusMutex,
+    bus_mutex: &'a BusMutex<'a> ,
     exit_condvar: &'a ExitNotifyCondVar,
 }
 
 impl<'a> Cpu<'a> {
-    pub fn new(bus: &'a BusMutex, condvar: &'a ExitNotifyCondVar) -> Cpu<'a> {
+    pub fn new(bus_mutex: &'a BusMutex<'a>, condvar: &'a ExitNotifyCondVar) -> Cpu<'a> {
         Cpu {
-            cmd_bus: bus,
+            bus_mutex,
             exit_condvar: condvar,
         }
+    }
+
+    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCmd<'a>>) {
+        let mut bus = self.bus_mutex.lock().unwrap();
+        bus.add_cmd(cmd);
     }
 }
 
 impl<'a> Unit for Cpu<'a> {
-    fn init(&mut self) {
-    }
+    fn init(&mut self) {}
 
     fn start(&mut self) {
-        // let cmd_bus = BusMutex::clone(self.cmd_bus);
         let exit_condivar = ExitNotifyCondVar::clone(self.exit_condvar);
 
         thread::spawn(move || {
@@ -35,6 +39,5 @@ impl<'a> Unit for Cpu<'a> {
         });
     }
 
-    fn exit(&mut self) {
-    }
+    fn exit(&mut self) {}
 }

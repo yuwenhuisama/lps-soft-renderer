@@ -2,9 +2,10 @@ use std::{ops::{Index, IndexMut, Mul, MulAssign, Add, Neg, Sub, AddAssign, SubAs
 
 use super::vec4::Vec4;
 
-#[derive(Clone)]
-pub struct Matrix  {
-    col_: usize,  // w
+#[derive(Clone, Debug)]
+pub struct Matrix {
+    col_: usize,
+    // w
     row_: usize,  // h
 
     matrix_: Vec::<f32>,
@@ -20,13 +21,31 @@ impl Matrix {
         }
     }
 
-    pub fn new_with_init(col: usize, row: usize, mat:Vec::<f32>) -> Matrix {
+    pub fn new_with_value(col: usize, row: usize, value: f32) -> Matrix {
+        assert!(row > 0 && col > 0);
+        Matrix {
+            row_: row,
+            col_:col,
+            matrix_: vec![value; row * col],
+        }
+    }
+
+    pub fn new_with_init(col: usize, row: usize, mat: Vec::<f32>) -> Matrix {
         assert_eq!(row * col, mat.len());
-        Matrix { 
+        Matrix {
             row_: row,
             col_: col,
-            matrix_: mat
+            matrix_: mat,
         }
+    }
+
+    pub fn identity(col: usize, row: usize) -> Matrix {
+        assert_eq!(col, row);
+        let mut mat = Matrix::new_with_zero(col, row);
+        for i in 0..row {
+            mat[i][i] = 1.0;
+        }
+        return mat;
     }
 
     pub fn width(&self) -> usize {
@@ -50,7 +69,7 @@ impl Matrix {
         let idx = x * self.width() + y;
         self.matrix_[idx] = val;
     }
-    
+
     pub fn at(&self, x: usize, y: usize) -> f32 {
         let idx = x * self.col_ + y;
         assert!(idx < self.matrix_.len(), "x={}, y={}, col={}, row={}", x, y, self.col_, self.row_);
@@ -134,17 +153,17 @@ impl Matrix {
     }
 }
 
-impl Index<usize> for Matrix  {
+impl Index<usize> for Matrix {
     type Output = [f32];
 
-    fn index<'a>(&'a self, index: usize) -> &'a Self::Output {
-        &self.matrix_[(index * self.col_) .. self.row_]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.matrix_[(index * self.col_)..self.row_]
     }
 }
 
 impl IndexMut<usize> for Matrix {
     fn index_mut<'a>(&'a mut self, index: usize) -> &'a mut [f32] {
-        &mut self.matrix_[(index * self.col_) .. self.row_]
+        &mut self.matrix_[(index * self.col_)..self.row_]
     }
 }
 

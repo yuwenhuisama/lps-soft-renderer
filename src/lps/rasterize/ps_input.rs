@@ -1,4 +1,4 @@
-use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
+use crate::lps::common::math::{vec4::Vec4};
 
 pub struct PixelShaderInput {
     pub color: Vec4,

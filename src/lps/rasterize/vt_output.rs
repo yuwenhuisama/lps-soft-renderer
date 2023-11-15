@@ -1,6 +1,6 @@
 use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Debug, Copy)]
 pub struct VertexShaderOutput {
     world_pos: Vec4,
     window_pos: Vec4,

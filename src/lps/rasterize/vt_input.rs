@@ -1,5 +1,6 @@
 use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
 
+#[derive(Clone, Debug, Copy)]
 pub struct Vertex {
     pub position: Vec4,
     pub color: Vec3,
