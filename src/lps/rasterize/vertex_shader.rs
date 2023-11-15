@@ -1,7 +1,6 @@
-use std::any::Any;
+use std::{any::Any, sync::Arc};
 use crate::lps::common::math::vec4::Vec4;
 use crate::lps::common::math::mat4x4::Mat4x4;
-use crate::lps::rasterize::pixel_shader::CustomPixelShader;
 
 use super::{pipeline::VertexShader, vt_input::VertexShaderInput, vt_output::VertexShaderOutput};
 
@@ -11,8 +10,8 @@ pub struct CustomVertexShader {
     proj_matrix_: Option<Mat4x4>,
 }
 
-impl CustomPixelShader {
-    fn new() -> CustomVertexShader {
+impl CustomVertexShader {
+    pub fn new() -> CustomVertexShader {
         CustomVertexShader {
             model_matrix_: None,
             view_matrix_: None,
@@ -37,7 +36,7 @@ impl VertexShader<VertexShaderInput, VertexShaderOutput> for CustomVertexShader 
         VertexShaderOutput::new(world_pos, window_pos, color, texcoord, normal)
     }
 
-    fn init_constant_buffer(&mut self, buffer: &Vec<Option<Box<dyn Any + Send>>>) {
+    fn init_constant_buffer(&mut self, buffer: &Vec<Option<Arc<dyn Any + Send>>>) {
         self.model_matrix_ = Some(buffer[0].as_ref().unwrap().downcast_ref::<Mat4x4>().unwrap().clone());
         self.view_matrix_ = Some(buffer[1].as_ref().unwrap().downcast_ref::<Mat4x4>().unwrap().clone());
         self.proj_matrix_ = Some(buffer[2].as_ref().unwrap().downcast_ref::<Mat4x4>().unwrap().clone());

@@ -7,8 +7,8 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
-    pub const Zero: Vec2 = Vec2::new(0.0, 0.0);
-    pub const One: Vec2 = Vec2::new(1.0, 1.0);
+    pub const ZERO: Vec2 = Vec2::new(0.0, 0.0);
+    pub const ONE: Vec2 = Vec2::new(1.0, 1.0);
 
     pub const fn new(x: f32, y: f32) -> Self {
         Self { x, y }

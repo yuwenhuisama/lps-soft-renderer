@@ -1,4 +1,4 @@
-use std::any::Any;
+use std::{any::Any, sync::Arc};
 use crate::lps::common::math::vec4::Vec4;
 
 pub type Color = Vec4;
@@ -6,24 +6,24 @@ pub type Color = Vec4;
 pub trait VertexShader<Input, Output> {
     fn handle(&self, vertex: &Input) -> Output;
 
-    fn init_constant_buffer(&mut self, buffer: &Vec<Option<Box<dyn Any + Send>>>);
+    fn init_constant_buffer(&mut self, buffer: &Vec<Option<Arc<dyn Any + Send>>>);
 }
 
 pub trait PixelShader<Input> {
     fn handle(&self, pixel_fragment: &Input) -> Color;
 
-    fn init_constant_buffer(&mut self, buffer: &Vec<Option<Box<dyn Any + Send>>>);
+    fn init_constant_buffer(&mut self, buffer: &Vec<Option<Arc<dyn Any + Send>>>);
 }
 
-pub struct PipeLine<'a, VSInput, VSOutput> {
-    vertex_shader: Option<&'a mut (dyn VertexShader<VSInput, VSOutput> + Send + Sync)>,
-    pixel_shader: Option<&'a  mut (dyn PixelShader<VSOutput> + Send + Sync)>,
+pub struct PipeLine<VSInput, VSOutput> {
+    vertex_shader: Option<Box<dyn VertexShader<VSInput, VSOutput> + Send + Sync>>,
+    pixel_shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>,
 }
 
-impl<'a, VSInput, VSOutput> PipeLine<'a, VSInput, VSOutput> {
+impl<'a, VSInput, VSOutput> PipeLine<VSInput, VSOutput> {
     pub fn new(
-        vertex_shader: Option<&'a mut (dyn VertexShader<VSInput, VSOutput> + Send + Sync)>,
-        pixel_shader: Option<&'a mut (dyn PixelShader<VSOutput> + Send + Sync)>,
+        vertex_shader: Option<Box<dyn VertexShader<VSInput, VSOutput> + Send + Sync>>,
+        pixel_shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>,
     ) -> Self {
         PipeLine {
             vertex_shader,
@@ -31,15 +31,15 @@ impl<'a, VSInput, VSOutput> PipeLine<'a, VSInput, VSOutput> {
         }
     }
 
-    pub fn bind_vertex_shader(&mut self, shader: Option<&'a mut (dyn VertexShader<VSInput, VSOutput> + Send + Sync)>) {
+    pub fn bind_vertex_shader(&mut self, shader: Option<Box<dyn VertexShader<VSInput, VSOutput> + Send + Sync>>) {
         self.vertex_shader = shader;
     }
 
-    pub fn bind_pixel_shader(&mut self, shader: Option<&'a mut (dyn PixelShader<VSOutput> + Send + Sync)>) {
+    pub fn bind_pixel_shader(&mut self, shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>) {
         self.pixel_shader = shader;
     }
 
-    pub fn handle_vertex_shader(&mut self, vertex: &VSInput, constant_buffer: &Vec<Option<Box<dyn Any + Send>>>) -> VSOutput {
+    pub fn handle_vertex_shader(&mut self, vertex: &VSInput, constant_buffer: &Vec<Option<Arc<dyn Any + Send>>>) -> VSOutput {
         if let None = self.vertex_shader {
             panic!("vertex shader is not bound");
         }

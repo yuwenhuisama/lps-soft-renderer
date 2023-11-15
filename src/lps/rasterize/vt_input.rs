@@ -21,9 +21,9 @@ impl Vertex {
     pub fn new_with_pos(position: Vec4) -> Self {
         Self {
             position,
-            color: Vec3::Zero,
-            texcoord: Vec2::Zero,
-            normal: Vec3::Zero,
+            color: Vec3::ZERO,
+            texcoord: Vec2::ZERO,
+            normal: Vec3::ZERO,
         }
     }
 }

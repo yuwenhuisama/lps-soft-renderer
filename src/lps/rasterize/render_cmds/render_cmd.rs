@@ -1,5 +1,6 @@
 use crate::lps::core::gpu::GpuApi;
 
+#[derive(Debug)]
 pub enum RenderCommandType {
     SetVertexBuffer = 0,
     SetRenderTarget = 1,

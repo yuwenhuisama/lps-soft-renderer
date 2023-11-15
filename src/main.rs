@@ -2,7 +2,10 @@ mod lps;
 
 use std::any::Any;
 use std::sync::{Arc, Mutex, Condvar};
+use std::thread;
 use lps::core::{gpu::Gpu, cpu::Cpu, bus::Bus};
+use lps::rasterize::vertex_shader::CustomVertexShader;
+use lps::rasterize::pixel_shader::CustomPixelShader;
 use crate::lps::common::color::Color;
 use crate::lps::common::math::mat4x4::Mat4x4;
 use crate::lps::common::math::vec2::Vec2;
@@ -19,7 +22,7 @@ use crate::lps::rasterize::vt_input::VertexShaderInput;
 use crate::lps::rasterize::vt_output::VertexShaderOutput;
 
 fn get_viewport_mat(ox: i32, oy: i32, width: i32, height: i32) -> Mat4x4 {
-    let mut mat = Mat4x4::new_with_value(4, 4, 1.0);
+    let mut mat = Mat4x4::new_with_value(1.0);
     mat[0][0] = width as f32 / 2.0;
     mat[3][0] = ox as f32 + width as f32 / 2.0;
     mat[1][1] = height as f32 / 2.0;
@@ -49,39 +52,43 @@ fn do_render(cpu: &mut Cpu) {
         Vec3::new(0.0, 0.0, 0.0),
     );
 
-    let mut render_target = RenderTarget::new(800, 600);
+    let render_target = Arc::new(Mutex::new(RenderTarget::new(800, 600)));
     let vertex_list: Vec<Arc<dyn Any + Send + Sync>> = vec![
         Arc::new(v1),
         Arc::new(v2),
         Arc::new(v3)];
 
-    render_target.clear(Color::BLUE);
+    let mut unwrap = render_target.lock().unwrap();
+    unwrap.clear(Color::BLUE);
+    drop(unwrap);
 
-    cpu.add_cmd(Box::new(SetConstantBufferCmd::new(
+    cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
         0,
-        &Mat4x4::identity(4, 4),
+        Mat4x4::identity(),
     ))); // model matrix
 
-    cpu.add_cmd(Box::new(SetConstantBufferCmd::new(
+    cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
         1,
-        &get_viewport_mat(0, 0, 800, 600)
+        get_viewport_mat(0, 0, 800, 600),
     ))); // view matrix
 
-    cpu.add_cmd(Box::new(SetConstantBufferCmd::new(
+    cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
         2,
-        &Mat4x4::identity(4, 4),
+        Mat4x4::identity(),
     ))); // proj matrix
 
-    cpu.add_cmd(Box::new(SetRenderTargetCmd::new(&render_target)));
+    cpu.add_cmd(Box::new(SetRenderTargetCmd::new(Arc::clone(&render_target))));
     cpu.add_cmd(Box::new(SetVertexBufferCmd::new(vertex_list)));
     cpu.add_cmd(Box::new(Draw::new()));
 
-    render_target.save("test.png");
+    cpu.swap();
+
+    // let mut unwrap = render_target.lock().unwrap();
+
+    // unwrap.save("test.png");
 }
 
 fn main() {
-    println!("Start run");
-
     let bus = Arc::new(Mutex::new(Bus::new()));
     let condvar_info = Arc::new((Mutex::<i32>::new(2), Condvar::new()));
 
@@ -92,10 +99,23 @@ fn main() {
     cpu.init();
     gpu.init();
 
-    cpu.start();
-    gpu.start();
+    gpu.bind_vertex_shader(Box::new(CustomVertexShader::new()));
+    gpu.bind_pixel_shader(Box::new(CustomPixelShader::new()));
 
-    do_render(&mut cpu);
+
+    thread::scope(|scope| {
+        let t1 = scope.spawn(|| {
+            do_render(&mut cpu);
+            cpu.start();
+        });
+
+        let t2 = scope.spawn(|| {
+            gpu.start();
+        });
+
+        t1.join().unwrap();
+        t2.join().unwrap();
+    });
 
     let (lock, cvar) = condvar_info.as_ref();
     let mut cnt = lock.lock().unwrap();

@@ -9,8 +9,8 @@ pub struct Vec4 {
 }
 
 impl Vec4 {
-    pub const Zero: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.0);
-    pub const One: Vec4 = Vec4::new(1.0, 1.0, 1.0, 1.0);
+    pub const ZERO: Vec4 = Vec4::new(0.0, 0.0, 0.0, 0.0);
+    pub const ONE: Vec4 = Vec4::new(1.0, 1.0, 1.0, 1.0);
 
     pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Self {
         Self { x, y, z, w }

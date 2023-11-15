@@ -2,11 +2,11 @@ use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
 
 #[derive(Clone, Debug, Copy)]
 pub struct VertexShaderOutput {
-    world_pos: Vec4,
-    window_pos: Vec4,
-    color: Vec4,
-    texcoord: Vec2,
-    normal: Vec3,
+    pub world_pos: Vec4,
+    pub window_pos: Vec4,
+    pub color: Vec4,
+    pub texcoord: Vec2,
+    pub normal: Vec3,
 }
 
 impl VertexShaderOutput {

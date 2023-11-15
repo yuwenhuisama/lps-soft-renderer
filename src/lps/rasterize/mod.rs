@@ -5,5 +5,4 @@ pub mod vertex_shader;
 pub mod pixel_shader;
 pub mod vt_input;
 pub mod vt_output;
-pub mod ps_input;
 pub mod render_cmds;

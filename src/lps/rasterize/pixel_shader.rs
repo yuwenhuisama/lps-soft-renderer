@@ -1,15 +1,20 @@
-use std::any::Any;
-use crate::lps::rasterize::ps_input::PixelShaderInput;
-use super::pipeline::{Color, PixelShader};
+use std::{any::Any, sync::Arc};
+use super::{pipeline::{Color, PixelShader}, vt_output::VertexShaderOutput};
 
 pub struct CustomPixelShader {
 }
 
-impl PixelShader<PixelShaderInput> for CustomPixelShader {
-    fn handle(&self, pixel_fragment: &PixelShaderInput) -> Color {
+impl CustomPixelShader {
+    pub fn new() -> CustomPixelShader {
+        CustomPixelShader {}
+    }
+}
+
+impl PixelShader<VertexShaderOutput> for CustomPixelShader {
+    fn handle(&self, pixel_fragment: &VertexShaderOutput) -> Color {
         pixel_fragment.color
     }
 
-    fn init_constant_buffer(&mut self, _: &Vec<Option<Box<dyn Any + Send>>>) {
+    fn init_constant_buffer(&mut self, _: &Vec<Option<Arc<dyn Any + Send>>>) {
     }
 }
