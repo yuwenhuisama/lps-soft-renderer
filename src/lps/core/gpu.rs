@@ -7,9 +7,9 @@ use crate::lps::rasterize::render_target::RenderTarget;
 use super::{bus::{BusMutex, ExitNotifyCondVar}, common::Unit};
 
 pub trait GpuApi<'a> {
-    fn set_vertex_buffer(&mut self, vertex_list: Vec<Arc<dyn Any + Send + Sync + 'a>>);
+    fn set_vertex_buffer(&mut self, vertex_list: Vec<Arc<dyn Any + Send + Sync>>);
     fn set_render_target(&mut self, render_target: &'a RenderTarget);
-    fn set_constant_buffer(&mut self, layout_index: usize, buffer: &'a (dyn Any + Send + Sync));
+    fn set_constant_buffer(&mut self, layout_index: usize, buffer: &(dyn Any + Send + Sync));
     fn draw(&mut self);
 }
 
@@ -60,8 +60,9 @@ impl<'a, VSInput, VSOutput> GpuApi<'a> for Gpu<'a, VSInput, VSOutput>
         self.render_target = Some(render_target);
     }
 
-    fn set_constant_buffer(&mut self, layout_index: usize, buffer: &'a (dyn Any + Send + Sync)) {
-        self.constant_buffer[layout_index] = Some(Box::new(buffer.clone()));
+    fn set_constant_buffer<'b>(&mut self, layout_index: usize, buffer: &'b (dyn 'b + Any + Send + Sync)) {
+        let copy = buffer.clone();
+        self.constant_buffer[layout_index] = Some(Box::new(copy));
     }
 
     fn draw(&mut self) {
@@ -84,40 +85,50 @@ impl<'a, VSInput, VSOutput> GpuApi<'a> for Gpu<'a, VSInput, VSOutput>
     }
 }
 
+unsafe impl<'a, VSInput, VSOutput> Sync for Gpu<'a, VSInput, VSOutput> {
+}
+
+unsafe impl<'a, VSInput, VSOutput> Send for Gpu<'a, VSInput, VSOutput> {
+}
+
 impl<'a, VSInput, VSOutput> Unit for Gpu<'a, VSInput, VSOutput>
-    where VSInput: 'a + Debug + Sync + Send + Copy + Clone,
-          VSOutput: 'a + Debug + Sync + Send + Copy + Clone,
+    where VSInput: 'static + Debug + Sync + Send + Copy + Clone,
+          VSOutput: 'static + Debug + Sync + Send + Copy + Clone,
 {
     fn init(&mut self) {}
 
     fn start(&mut self) {
-        let exit_condvar = ExitNotifyCondVar::clone(self.exit_condvar);
+        let exit_condvar = Arc::clone(&self.exit_condvar);
+        let bus_mutex = Arc::clone(&self.bus_mutex);
 
-        thread::spawn(|| {
-            loop {
-                let bus = self.bus_mutex.lock().as_mut().unwrap();
-
-                if bus.empty() {
-                    break;
+        thread::scope(|s| {
+            s.spawn(|| {
+                loop {
+                    let mut bus = bus_mutex.lock().unwrap();
+    
+                    if bus.empty() {
+                        break;
+                    }
+    
+                    let result = bus.try_get_cmd();
+                    let cmd = match result {
+                        Result::Ok(res) => res,
+                        Err(_) => continue,
+                    };
+    
+                    cmd.execute(self);
                 }
-
-                let result = bus.try_get_cmd();
-                let cmd = match result {
-                    Result::Ok(res) => res,
-                    Err(_) => continue,
-                };
-
-                cmd.execute(self);
-            }
+    
+                let (lock, condvar) = exit_condvar.as_ref();
+                let mut cnt = lock.lock().unwrap();
+                *cnt -= 1;
+                condvar.notify_all();
+        
+                println!("gpu exit.")
+            }).join();
         });
-
-        let (lock, condvar) = exit_condvar.as_ref();
-        let mut cnt = lock.lock().unwrap();
-        *cnt -= 1;
-        condvar.notify_all();
-
-        println!("gpu exit.")
     }
+
 
     fn exit(&mut self) {
         todo!()

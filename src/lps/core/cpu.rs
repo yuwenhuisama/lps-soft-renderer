@@ -2,7 +2,7 @@ use std::thread;
 use crate::lps::rasterize::render_cmds::render_cmd::RenderCmd;
 
 use super::bus::{BusMutex, ExitNotifyCondVar};
-use super::common::{Unit};
+use super::common::Unit;
 
 pub struct Cpu<'a> {
     bus_mutex: &'a BusMutex<'a> ,
@@ -17,7 +17,7 @@ impl<'a> Cpu<'a> {
         }
     }
 
-    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCmd<'a>>) {
+    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCmd>) {
         let mut bus = self.bus_mutex.lock().unwrap();
         bus.add_cmd(cmd);
     }

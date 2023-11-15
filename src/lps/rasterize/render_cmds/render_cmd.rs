@@ -7,7 +7,7 @@ pub enum RenderCommandType {
     SetConstantBuffer = 3,
 }
 
-pub trait RenderCmd<'a>: Send {
+pub trait RenderCmd: Send {
     fn cmd_type(&self) -> RenderCommandType;
-    fn execute(&self, gpu_api: &'a mut dyn GpuApi<'a>);
+    fn execute(&self, gpu_api: &mut (dyn GpuApi + Sync + Send));
 }

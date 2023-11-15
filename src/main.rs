@@ -19,7 +19,7 @@ use crate::lps::rasterize::vt_input::VertexShaderInput;
 use crate::lps::rasterize::vt_output::VertexShaderOutput;
 
 fn get_viewport_mat(ox: i32, oy: i32, width: i32, height: i32) -> Mat4x4 {
-    let mat = Mat4x4::new_with_value(4, 4, 1.0);
+    let mut mat = Mat4x4::new_with_value(4, 4, 1.0);
     mat[0][0] = width as f32 / 2.0;
     mat[3][0] = ox as f32 + width as f32 / 2.0;
     mat[1][1] = height as f32 / 2.0;
@@ -27,7 +27,7 @@ fn get_viewport_mat(ox: i32, oy: i32, width: i32, height: i32) -> Mat4x4 {
     return mat;
 }
 
-fn do_render(mut cpu: &Cpu) {
+fn do_render(cpu: &mut Cpu) {
     let v1: VertexShaderInput = VertexShaderInput::new(
         Vec4::new(-0.5, -0.5, 0.0, 1.0),
         Vec3::new(255.0, 0.0, 0.0),
@@ -95,7 +95,7 @@ fn main() {
     cpu.start();
     gpu.start();
 
-    do_render(&cpu);
+    do_render(&mut cpu);
 
     let (lock, cvar) = condvar_info.as_ref();
     let mut cnt = lock.lock().unwrap();

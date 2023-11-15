@@ -16,12 +16,12 @@ impl<'a> SetConstantBufferCmd<'a> {
     }
 }
 
-impl<'a> RenderCmd<'a> for SetConstantBufferCmd<'a> {
+impl<'a> RenderCmd for SetConstantBufferCmd<'a> {
     fn cmd_type(&self) -> RenderCommandType {
         RenderCommandType::SetConstantBuffer
     }
 
-    fn execute(&self, gpu_api: &mut dyn GpuApi<'a>) {
+    fn execute(&self, gpu_api: &mut (dyn GpuApi + Sync + Send)) {
         gpu_api.set_constant_buffer(self.layout_index, self.buffer.clone());
     }
 }

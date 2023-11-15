@@ -15,12 +15,12 @@ impl SetVertexBufferCmd {
     }
 }
 
-impl<'a> RenderCmd<'a>  for SetVertexBufferCmd {
+impl RenderCmd for SetVertexBufferCmd {
     fn cmd_type(&self) -> RenderCommandType {
         RenderCommandType::SetVertexBuffer
     }
 
-    fn execute(&self, gpu_api: &'a mut dyn GpuApi<'a>) {
+    fn execute(&self, gpu_api: &mut (dyn GpuApi + Sync + Send)) {
         let copy = self.vertex_list.clone();
         gpu_api.set_vertex_buffer(copy);
     }

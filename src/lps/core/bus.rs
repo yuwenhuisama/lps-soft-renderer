@@ -6,22 +6,22 @@ pub enum BusPopRes {
     Failed,
 }
 
-pub struct Bus<'a> {
-    cmd_queue_: VecDeque<Box<dyn RenderCmd<'a>>>
+pub struct Bus {
+    cmd_queue_: VecDeque<Box<dyn RenderCmd>>
 }
 
-impl<'a>  Bus<'a>  {
-    pub fn new() -> Bus<'a>  {
+impl Bus  {
+    pub fn new() -> Bus  {
         Bus {
-            cmd_queue_: VecDeque::<Box<dyn RenderCmd<'a> >>::new()
+            cmd_queue_: VecDeque::<Box<dyn RenderCmd >>::new()
         }
     }
 
-    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCmd<'a> >) {
+    pub fn add_cmd(&mut self, cmd: Box<dyn RenderCmd >) {
         self.cmd_queue_.push_back(cmd);
     }
 
-    pub fn try_get_cmd(&mut self) -> Result<Box<dyn RenderCmd<'a> >, BusPopRes> {
+    pub fn try_get_cmd(&mut self) -> Result<Box<dyn RenderCmd>, BusPopRes> {
         if let Some(res) = self.cmd_queue_.pop_front() {
             Ok(res)
         }
@@ -35,5 +35,5 @@ impl<'a>  Bus<'a>  {
     }
 }
 
-pub type BusMutex<'a>  = Arc<Mutex<Bus<'a> >>;
+pub type BusMutex<'a>  = Arc<Mutex<Bus >>;
 pub type ExitNotifyCondVar = Arc<(Mutex<i32>, Condvar)>;
