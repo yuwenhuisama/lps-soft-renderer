@@ -14,7 +14,12 @@ impl CustomPixelShader {
 
 impl PixelShader<VertexShaderOutput> for CustomPixelShader {
     fn handle(&self, pixel_fragment: &VertexShaderOutput) -> Color {
-        pixel_fragment.color
+        Color::new(
+            pixel_fragment.color.x,
+            pixel_fragment.color.y,
+            pixel_fragment.color.z,
+            255.0,
+        )
     }
 
     fn init_constant_buffer(&mut self, _: &Vec<Option<Arc<dyn Any + Send>>>) {}

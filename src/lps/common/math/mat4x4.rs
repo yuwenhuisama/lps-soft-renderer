@@ -77,6 +77,16 @@ impl Mat4x4 {
         self.matrix[idx]
     }
 
+    pub fn trans(&self) -> Mat4x4 {
+        let mut res = Mat4x4::new_with_zero();
+        for i in 0..self.height() {
+            for j in 0..self.width() {
+                res.set(j, i, self.at(i, j));
+            }
+        }
+        return res;
+    }
+
     fn multiply_scalar(&self, n: f32) -> Mat4x4 {
         let mut res = Mat4x4::new_with_zero();
 

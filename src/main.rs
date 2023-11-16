@@ -22,32 +22,53 @@ use crate::lps::rasterize::vt_input::VertexShaderInput;
 use crate::lps::rasterize::vt_output::VertexShaderOutput;
 
 fn get_viewport_mat(ox: i32, oy: i32, width: i32, height: i32) -> Mat4x4 {
-    let mut mat = Mat4x4::new_with_value(1.0);
+    let mut mat = Mat4x4::identity();
     mat[0][0] = width as f32 / 2.0;
-    mat[3][0] = ox as f32 + width as f32 / 2.0;
+    mat[0][3] = ox as f32 + width as f32 / 2.0;
     mat[1][1] = height as f32 / 2.0;
-    mat[3][1] = oy as f32 + height as f32 / 2.0;
+    mat[1][3] = oy as f32 + height as f32 / 2.0;
     return mat;
 }
 
 fn do_render(cpu: &mut Cpu) {
+    // let v1: VertexShaderInput = VertexShaderInput::new(
+    //     Vec4::new(-0.5, -0.5, 0.0, 1.0),
+    //     Vec3::new(255.0, 0.0, 0.0),
+    //     Vec2::new(0.0, 0.0),
+    //     Vec3::new(0.0, 0.0, 0.0),
+    // );
+    //
+    // let v2: VertexShaderInput = VertexShaderInput::new(
+    //     Vec4::new(0.5, -0.5, 0.0, 1.0),
+    //     Vec3::new(0.0, 255.0, 0.0),
+    //     Vec2::new(0.0, 0.0),
+    //     Vec3::new(0.0, 0.0, 0.0),
+    // );
+    //
+    // let v3: VertexShaderInput = VertexShaderInput::new(
+    //     Vec4::new(0.0, 0.5, 0.0, 1.0),
+    //     Vec3::new(0.0, 0.0, 255.0),
+    //     Vec2::new(0.0, 0.0),
+    //     Vec3::new(0.0, 0.0, 0.0),
+    // );
+
     let v1: VertexShaderInput = VertexShaderInput::new(
-        Vec4::new(-0.5, -0.5, 0.0, 1.0),
-        Vec3::new(255.0, 0.0, 0.0),
+        Vec4::new(-200.0 / 800.0, -150.0 / 600.0, 0.0, 1.0),
+        Vec3::new(255.0, 0.0, 0.0), // r
         Vec2::new(0.0, 0.0),
         Vec3::new(0.0, 0.0, 0.0),
     );
 
     let v2: VertexShaderInput = VertexShaderInput::new(
-        Vec4::new(0.5, -0.5, 0.0, 1.0),
-        Vec3::new(0.0, 255.0, 0.0),
+        Vec4::new(-100.0 / 800.0, 300.0 / 600.0, 0.0, 1.0),
+        Vec3::new(0.0, 255.0, 0.0), // g
         Vec2::new(0.0, 0.0),
         Vec3::new(0.0, 0.0, 0.0),
     );
 
     let v3: VertexShaderInput = VertexShaderInput::new(
-        Vec4::new(0.0, 0.5, 0.0, 1.0),
-        Vec3::new(0.0, 0.0, 255.0),
+        Vec4::new(300.0 / 800.0, 100.0 / 600.0, 0.0, 1.0),
+        Vec3::new(0.0, 0.0, 255.0), // b
         Vec2::new(0.0, 0.0),
         Vec3::new(0.0, 0.0, 0.0),
     );
@@ -57,7 +78,7 @@ fn do_render(cpu: &mut Cpu) {
         vec![Arc::new(v1), Arc::new(v2), Arc::new(v3)];
 
     let mut unwrap = render_target.lock().unwrap();
-    unwrap.clear(Color::BLUE);
+    unwrap.clear(Color::BLACK);
     drop(unwrap);
 
     cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
@@ -83,17 +104,21 @@ fn do_render(cpu: &mut Cpu) {
 
     cpu.swap();
 
-    // let mut unwrap = render_target.lock().unwrap();
-
-    // unwrap.save("test.png");
+    let mut unwrap = render_target.lock().unwrap();
+    unwrap.save("test.png");
 }
 
 fn main() {
     let bus = Arc::new(Mutex::new(Bus::new()));
-    let condvar_info = Arc::new((Mutex::<i32>::new(2), Condvar::new()));
+    let exit_condvar_info = Arc::new((Mutex::<i32>::new(2), Condvar::new()));
+    let render_complete_condvar_info = Arc::new((Mutex::<()>::new(()), Condvar::new()));
 
-    let mut cpu = Cpu::new(&bus, &condvar_info);
-    let mut gpu = Gpu::<VertexShaderInput, VertexShaderOutput>::new(&bus, &condvar_info);
+    let mut cpu = Cpu::new(&bus, &exit_condvar_info, &render_complete_condvar_info);
+    let mut gpu = Gpu::<VertexShaderInput, VertexShaderOutput>::new(
+        &bus,
+        &exit_condvar_info,
+        &render_complete_condvar_info,
+    );
 
     cpu.init();
     gpu.init();
@@ -115,7 +140,7 @@ fn main() {
         t2.join().unwrap();
     });
 
-    let (lock, cvar) = condvar_info.as_ref();
+    let (lock, cvar) = exit_condvar_info.as_ref();
     let mut cnt = lock.lock().unwrap();
     while *cnt > 0 {
         println!("waiting.");

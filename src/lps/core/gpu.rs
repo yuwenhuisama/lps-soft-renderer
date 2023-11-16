@@ -2,11 +2,15 @@ use super::{
     bus::{BusMutex, ExitNotifyCondVar},
     common::Unit,
 };
+use crate::lps::core::bus::RenderCompleteNotifyCondVar;
 use crate::lps::rasterize::pipeline::{PipeLine, PixelShader, VertexShader};
 use crate::lps::rasterize::render_target::RenderTarget;
+use crate::lps::rasterize::render_util::RenderUtil;
+use crate::lps::rasterize::vt_output::VertexShaderOutputPositionAndLerp;
 use std::fmt::Debug;
+use std::ops::DerefMut;
 use std::sync::Arc;
-use std::thread::{self, Scope, ScopedJoinHandle};
+use std::thread;
 use std::time::Duration;
 use std::{any::Any, sync::Mutex};
 
@@ -25,13 +29,14 @@ pub struct Gpu<'a, VSInput, VSOutput> {
     render_target: Option<Arc<Mutex<RenderTarget>>>,
     constant_buffer: Vec<Option<Arc<dyn Any + Send>>>,
     exit_flag: Arc<Mutex<bool>>,
-    scope_handler: Option<ScopedJoinHandle<'a, ()>>,
+    render_complete_condvar: &'a RenderCompleteNotifyCondVar,
 }
 
 impl<'a, VSInput, VSOutput> Gpu<'a, VSInput, VSOutput> {
     pub fn new(
         bus_mutex: &'a BusMutex<'a>,
         condvar: &'a ExitNotifyCondVar,
+        render_complete_condvar: &'a RenderCompleteNotifyCondVar,
     ) -> Gpu<'a, VSInput, VSOutput> {
         let mut constant_buffer = vec![];
         for _ in 0..32 {
@@ -44,9 +49,9 @@ impl<'a, VSInput, VSOutput> Gpu<'a, VSInput, VSOutput> {
             exit_condvar: condvar,
             vertex_list: None,
             render_target: None,
-            constant_buffer, // 31 is the max layout index
+            constant_buffer, // 31 is the max constant buffer index
             exit_flag: Arc::new(Mutex::new(true)),
-            scope_handler: None,
+            render_complete_condvar,
         }
     }
 
@@ -67,8 +72,8 @@ impl<'a, VSInput, VSOutput> Gpu<'a, VSInput, VSOutput> {
 
 impl<'a, VSInput, VSOutput> GpuApi<'a> for Gpu<'a, VSInput, VSOutput>
 where
-    VSInput: 'a + Sync + Send + Debug + Copy + Clone + 'static,
-    VSOutput: 'a + Sync + Send + Debug + Copy + Clone + 'static,
+    VSInput: 'static + Sync + Send + Debug + Copy + Clone,
+    VSOutput: 'static + VertexShaderOutputPositionAndLerp + Sync + Send + Debug + Copy + Clone,
 {
     fn set_vertex_buffer(&mut self, vertex_list: Vec<Arc<dyn Any + Send + Sync>>) {
         let vertex_list = vertex_list
@@ -101,20 +106,41 @@ where
             panic!("render target is not set");
         }
 
+        let (mutex, condvar) = self.render_complete_condvar.as_ref();
+        let _unused = mutex.lock().unwrap();
+
+        let pipe_line = &mut self.pipe_line;
         let handled_vertex_list = self
             .vertex_list
             .as_ref()
             .unwrap()
             .iter()
-            .map(|vertex| {
-                self.pipe_line
-                    .handle_vertex_shader(vertex, &self.constant_buffer)
-            })
+            .map(|vertex| pipe_line.handle_vertex_shader(vertex, &self.constant_buffer))
             .collect::<Vec<VSOutput>>();
 
-        for vertex in handled_vertex_list {
-            print!("handled vertex: {:?}", vertex);
+        let vertex_cnt = handled_vertex_list.len();
+        let triangles = vertex_cnt / 3;
+        let mut render_target = self.render_target.as_ref().unwrap().lock().unwrap();
+
+        for i in 0..triangles {
+            let v0 = &handled_vertex_list[i * 3];
+            let v1 = &handled_vertex_list[i * 3 + 1];
+            let v2 = &handled_vertex_list[i * 3 + 2];
+
+            RenderUtil::draw_triangle(
+                render_target.deref_mut(),
+                v0,
+                v1,
+                v2,
+                |v0: &VSOutput, v1: &VSOutput, weight: f32| {
+                    let color = VSOutput::lerp(v0, v1, weight);
+                    let output = pipe_line.handle_pixel_shader(&color);
+                    return output;
+                },
+            );
         }
+
+        condvar.notify_all();
     }
 }
 
@@ -125,7 +151,7 @@ unsafe impl<'a, VSInput, VSOutput> Send for Gpu<'a, VSInput, VSOutput> {}
 impl<'a, VSInput, VSOutput> Unit<'a> for Gpu<'a, VSInput, VSOutput>
 where
     VSInput: 'static + Debug + Sync + Send + Copy + Clone,
-    VSOutput: 'static + Debug + Sync + Send + Copy + Clone,
+    VSOutput: 'static + VertexShaderOutputPositionAndLerp + Debug + Sync + Send + Copy + Clone,
 {
     fn init(&mut self) {}
 
@@ -153,7 +179,7 @@ where
 
             let result = bus.try_get_cmd();
             let cmd = match result {
-                Result::Ok(res) => res,
+                Ok(res) => res,
                 Err(_) => continue,
             };
 

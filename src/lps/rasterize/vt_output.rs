@@ -1,5 +1,10 @@
 use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
 
+pub trait VertexShaderOutputPositionAndLerp {
+    fn position(&self) -> &Vec4;
+    fn lerp(v1: &Self, v2: &Self, factor: f32) -> Self;
+}
+
 #[derive(Clone, Debug, Copy)]
 pub struct VertexShaderOutput {
     pub world_pos: Vec4,
@@ -25,8 +30,14 @@ impl VertexShaderOutput {
             normal,
         }
     }
+}
 
-    pub fn lerp(v1: VertexShaderOutput, v2: VertexShaderOutput, factor: f32) -> VertexShaderOutput {
+impl VertexShaderOutputPositionAndLerp for VertexShaderOutput {
+    fn position(&self) -> &Vec4 {
+        &self.window_pos
+    }
+
+    fn lerp(v1: &VertexShaderOutput, v2: &VertexShaderOutput, factor: f32) -> VertexShaderOutput {
         VertexShaderOutput::new(
             Vec4::lerp(v1.world_pos, v2.world_pos, factor),
             Vec4::lerp(v1.window_pos, v2.window_pos, factor),
