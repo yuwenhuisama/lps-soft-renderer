@@ -1,7 +1,9 @@
 use super::{
     bus::{BusMutex, ExitNotifyCondVar},
-    common::Unit,
+    unit::Unit,
 };
+use crate::lps::common::color::Color;
+use crate::lps::common::math::vec4::Vec4;
 use crate::lps::core::bus::RenderCompleteNotifyCondVar;
 use crate::lps::rasterize::pipeline::{PipeLine, PixelShader, VertexShader};
 use crate::lps::rasterize::render_target::RenderTarget;
@@ -19,6 +21,7 @@ pub trait GpuApi<'a> {
     fn set_render_target(&mut self, render_target: Arc<Mutex<RenderTarget>>);
     fn set_constant_buffer(&mut self, layout_index: usize, buffer: Arc<(dyn Any + Send + Sync)>);
     fn draw(&mut self);
+    fn clear(&self, color: &Vec4);
 }
 
 pub struct Gpu<'a, VSInput, VSOutput> {
@@ -142,13 +145,27 @@ where
 
         condvar.notify_all();
     }
+
+    fn clear(&self, color: &Vec4) {
+        if let None = self.render_target {
+            panic!("render target is not set");
+        }
+
+        let mut unwrap = self.render_target.as_ref().unwrap().lock().unwrap();
+        unwrap.clear(Color::new_rgba(
+            color.x as u8,
+            color.y as u8,
+            color.z as u8,
+            color.w as u8,
+        ));
+    }
 }
 
 unsafe impl<'a, VSInput, VSOutput> Sync for Gpu<'a, VSInput, VSOutput> {}
 
 unsafe impl<'a, VSInput, VSOutput> Send for Gpu<'a, VSInput, VSOutput> {}
 
-impl<'a, VSInput, VSOutput> Unit<'a> for Gpu<'a, VSInput, VSOutput>
+impl<'a, VSInput, VSOutput> Unit for Gpu<'a, VSInput, VSOutput>
 where
     VSInput: 'static + Debug + Sync + Send + Copy + Clone,
     VSOutput: 'static + VertexShaderOutputPositionAndLerp + Debug + Sync + Send + Copy + Clone,

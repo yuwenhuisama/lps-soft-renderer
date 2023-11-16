@@ -20,7 +20,7 @@ pub struct PipeLine<VSInput, VSOutput> {
     pixel_shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>,
 }
 
-impl<'a, VSInput, VSOutput> PipeLine<VSInput, VSOutput> {
+impl<VSInput, VSOutput> PipeLine<VSInput, VSOutput> {
     pub fn new(
         vertex_shader: Option<Box<dyn VertexShader<VSInput, VSOutput> + Send + Sync>>,
         pixel_shader: Option<Box<dyn PixelShader<VSOutput> + Send + Sync>>,

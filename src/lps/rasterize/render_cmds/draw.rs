@@ -1,15 +1,15 @@
 use crate::lps::core::gpu::GpuApi;
 use crate::lps::rasterize::render_cmds::render_cmd::{RenderCmd, RenderCommandType};
 
-pub struct Draw {}
+pub struct DrawCmd {}
 
-impl<'a> Draw {
-    pub fn new() -> Draw {
-        Draw {}
+impl DrawCmd {
+    pub fn new() -> DrawCmd {
+        DrawCmd {}
     }
 }
 
-impl RenderCmd for Draw {
+impl RenderCmd for DrawCmd {
     fn cmd_type(&self) -> RenderCommandType {
         RenderCommandType::Draw
     }

@@ -8,7 +8,7 @@ pub struct SetRenderTargetCmd {
     pub render_target: Arc<Mutex<RenderTarget>>,
 }
 
-impl<'a> SetRenderTargetCmd {
+impl SetRenderTargetCmd {
     pub fn new(render_target: Arc<Mutex<RenderTarget>>) -> SetRenderTargetCmd {
         SetRenderTargetCmd { render_target }
     }

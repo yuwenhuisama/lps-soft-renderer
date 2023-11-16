@@ -1,6 +1,5 @@
 mod lps;
 
-use crate::lps::common::color::Color;
 use crate::lps::common::math::mat4x4::Mat4x4;
 use crate::lps::common::math::vec2::Vec2;
 use crate::lps::common::math::vec3::Vec3;
@@ -12,11 +11,7 @@ use std::any::Any;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 
-use crate::lps::core::common::Unit;
-use crate::lps::rasterize::render_cmds::draw::Draw;
-use crate::lps::rasterize::render_cmds::set_constant_buffer::SetConstantBufferCmd;
-use crate::lps::rasterize::render_cmds::set_render_target::SetRenderTargetCmd;
-use crate::lps::rasterize::render_cmds::set_vertex_buffer::SetVertexBufferCmd;
+use crate::lps::core::unit::Unit;
 use crate::lps::rasterize::render_target::RenderTarget;
 use crate::lps::rasterize::vt_input::VertexShaderInput;
 use crate::lps::rasterize::vt_output::VertexShaderOutput;
@@ -77,30 +72,14 @@ fn do_render(cpu: &mut Cpu) {
     let vertex_list: Vec<Arc<dyn Any + Send + Sync>> =
         vec![Arc::new(v1), Arc::new(v2), Arc::new(v3)];
 
-    let mut unwrap = render_target.lock().unwrap();
-    unwrap.clear(Color::BLACK);
-    drop(unwrap);
+    cpu.bind_constant_buffer_mat4x4(0, Mat4x4::identity()); // model matrix
+    cpu.bind_constant_buffer_mat4x4(1, get_viewport_mat(0, 0, 800, 600)); // viewport matrix
+    cpu.bind_constant_buffer_mat4x4(2, Mat4x4::identity()); // proj matrix
 
-    cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
-        0,
-        Mat4x4::identity(),
-    ))); // model matrix
-
-    cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
-        1,
-        get_viewport_mat(0, 0, 800, 600),
-    ))); // view matrix
-
-    cpu.add_cmd(Box::new(SetConstantBufferCmd::new_with_mat4x4(
-        2,
-        Mat4x4::identity(),
-    ))); // proj matrix
-
-    cpu.add_cmd(Box::new(SetRenderTargetCmd::new(Arc::clone(
-        &render_target,
-    ))));
-    cpu.add_cmd(Box::new(SetVertexBufferCmd::new(vertex_list)));
-    cpu.add_cmd(Box::new(Draw::new()));
+    cpu.bind_render_target(Arc::clone(&render_target));
+    cpu.bind_vertex_buffer(vertex_list);
+    cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
+    cpu.draw();
 
     cpu.swap();
 

@@ -2,24 +2,24 @@ use crate::lps::common::color::Color;
 use bmp::{Image, Pixel};
 
 pub struct RenderTarget {
-    width_: u32,
-    height_: u32,
-    buffer_: Vec<Color>,
+    width: u32,
+    height: u32,
+    buffer: Vec<Color>,
 }
 
 impl RenderTarget {
     pub fn new(w: u32, h: u32) -> RenderTarget {
         RenderTarget {
-            width_: w,
-            height_: h,
-            buffer_: vec![Color::BLUE; usize::try_from(w * h).unwrap()],
+            width: w,
+            height: h,
+            buffer: vec![Color::BLUE; usize::try_from(w * h).unwrap()],
         }
     }
 
     pub fn resize(&mut self, width: u32, height: u32) {
-        self.width_ = width;
-        self.height_ = height;
-        self.buffer_ = vec![Color::BLUE; usize::try_from(width * height).unwrap()];
+        self.width = width;
+        self.height = height;
+        self.buffer = vec![Color::BLUE; usize::try_from(width * height).unwrap()];
     }
 
     pub fn clear(&mut self, color: Color) {
@@ -32,7 +32,7 @@ impl RenderTarget {
 
     pub fn get_pixel<'a>(&'a mut self, x: u32, y: u32) -> &'a mut Color {
         let idx = usize::try_from(y * self.width() + x).unwrap();
-        &mut self.buffer_[idx]
+        &mut self.buffer[idx]
     }
 
     pub fn draw_point(&mut self, x: i32, y: i32, color: &Color) {
@@ -74,10 +74,10 @@ impl RenderTarget {
     }
 
     pub fn width(&self) -> u32 {
-        self.width_
+        self.width
     }
 
     pub fn height(&self) -> u32 {
-        self.height_
+        self.height
     }
 }

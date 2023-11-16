@@ -10,7 +10,7 @@ pub struct SetConstantBufferCmd {
     pub buffer: Arc<dyn Any + Send + Sync>,
 }
 
-impl<'a> SetConstantBufferCmd {
+impl SetConstantBufferCmd {
     pub fn new_with_mat4x4(layout_index: usize, buffer: Mat4x4) -> SetConstantBufferCmd {
         SetConstantBufferCmd {
             layout_index,
@@ -26,7 +26,7 @@ impl<'a> SetConstantBufferCmd {
     }
 }
 
-impl<'a> RenderCmd for SetConstantBufferCmd {
+impl RenderCmd for SetConstantBufferCmd {
     fn cmd_type(&self) -> RenderCommandType {
         RenderCommandType::SetConstantBuffer
     }

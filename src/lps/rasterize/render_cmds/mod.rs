@@ -1,3 +1,4 @@
+pub mod clear;
 pub mod draw;
 pub mod render_cmd;
 pub mod set_constant_buffer;
