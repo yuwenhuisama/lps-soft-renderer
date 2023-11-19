@@ -1,6 +1,7 @@
 use crate::lps::common::math::{vec2::Vec2, vec3::Vec3, vec4::Vec4};
 
 pub trait VertexShaderOutputPositionAndLerp {
+    fn position_as_mut(&mut self) -> &mut Vec4;
     fn position(&self) -> &Vec4;
     fn lerp(v1: &Self, v2: &Self, factor: f32) -> Self;
 }
@@ -33,6 +34,10 @@ impl VertexShaderOutput {
 }
 
 impl VertexShaderOutputPositionAndLerp for VertexShaderOutput {
+    fn position_as_mut(&mut self) -> &mut Vec4 {
+        &mut self.window_pos
+    }
+
     fn position(&self) -> &Vec4 {
         &self.window_pos
     }

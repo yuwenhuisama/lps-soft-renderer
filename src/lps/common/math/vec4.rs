@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign};
 
 #[derive(Clone, Copy, Debug)]
 pub struct Vec4 {
@@ -27,6 +27,10 @@ impl Vec4 {
             self.z + other.z,
             self.w + other.w,
         )
+    }
+
+    pub fn do_add_scalar(&self, n: f32) -> Vec4 {
+        Vec4::new(self.x + n, self.y + n, self.z + n, self.w + n)
     }
 
     pub fn do_dot(&self, other: &Vec4) -> f32 {
@@ -62,10 +66,52 @@ impl Mul<Vec4> for Vec4 {
     }
 }
 
+impl MulAssign<f32> for Vec4 {
+    fn mul_assign(&mut self, rhs: f32) {
+        *self = self.do_multiply_scalar(rhs);
+    }
+}
+
+impl Div<f32> for Vec4 {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        self.do_multiply_scalar(1.0 / rhs)
+    }
+}
+
+impl DivAssign<f32> for Vec4 {
+    fn div_assign(&mut self, rhs: f32) {
+        *self = self.do_multiply_scalar(1.0 / rhs);
+    }
+}
+
 impl Add for Vec4 {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
         self.do_add(&rhs)
+    }
+}
+
+impl AddAssign for Vec4 {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = self.do_add(&rhs);
+    }
+}
+
+impl Add<f32> for Vec4 {
+    type Output = Self;
+
+    fn add(self, rhs: f32) -> Self::Output {
+        self.do_add_scalar(rhs)
+    }
+}
+
+impl Add<Vec4> for f32 {
+    type Output = Vec4;
+
+    fn add(self, rhs: Vec4) -> Self::Output {
+        rhs.do_add_scalar(self)
     }
 }

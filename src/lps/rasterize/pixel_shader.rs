@@ -1,7 +1,6 @@
-use super::{
-    pipeline::{Color, PixelShader},
-    vt_output::VertexShaderOutput,
-};
+use super::pipeline::PixelShader;
+use super::vt_output::VertexShaderOutput;
+use crate::lps::common::math::vec4::Vec4;
 use std::{any::Any, sync::Arc};
 
 pub struct CustomPixelShader {}
@@ -13,8 +12,8 @@ impl CustomPixelShader {
 }
 
 impl PixelShader<VertexShaderOutput> for CustomPixelShader {
-    fn handle(&self, pixel_fragment: &VertexShaderOutput) -> Color {
-        Color::new(
+    fn handle(&self, pixel_fragment: &VertexShaderOutput) -> Vec4 {
+        Vec4::new(
             pixel_fragment.color.x,
             pixel_fragment.color.y,
             pixel_fragment.color.z,

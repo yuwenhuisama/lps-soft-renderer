@@ -1,3 +1,4 @@
+use crate::lps::common::math::vec3::Vec3;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 
 use super::vec4::Vec4;
@@ -39,6 +40,102 @@ impl Mat4x4 {
         for i in 0..4 {
             mat[i][i] = 1.0;
         }
+        return mat;
+    }
+
+    pub fn rotate_x_mat(angle: f32) -> Mat4x4 {
+        #[rustfmt::skip]
+        return Mat4x4::new_with_init([
+            1.0, 0.0, 0.0, 0.0,
+            0.0, angle.cos(), -angle.sin(), 0.0,
+            0.0, angle.sin(), angle.cos(), 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]).trans();
+    }
+
+    pub fn rotate_y_mat(angle: f32) -> Mat4x4 {
+        #[rustfmt::skip]
+        return Mat4x4::new_with_init([
+            angle.cos(), 0.0, angle.sin(), 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            -angle.sin(), 0.0, angle.cos(), 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]).trans();
+    }
+
+    pub fn rotate_z_mat(angle: f32) -> Mat4x4 {
+        #[rustfmt::skip]
+        return Mat4x4::new_with_init([
+            angle.cos(), -angle.sin(), 0.0, 0.0,
+            angle.sin(), angle.cos(), 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0,
+        ]).trans();
+    }
+
+    pub fn rotate_axis_mat(angle: f32, axis: Vec3) -> Mat4x4 {
+        let mut mat = Mat4x4::new_with_zero();
+        let cos = angle.cos();
+        let sin = angle.sin();
+        let one_minus_cos = 1.0 - cos;
+        let x = axis.x;
+        let y = axis.y;
+        let z = axis.z;
+
+        mat[0][0] = cos + x * x * one_minus_cos;
+        mat[0][1] = x * y * one_minus_cos - z * sin;
+        mat[0][2] = x * z * one_minus_cos + y * sin;
+        mat[1][0] = y * x * one_minus_cos + z * sin;
+        mat[1][1] = cos + y * y * one_minus_cos;
+        mat[1][2] = y * z * one_minus_cos - x * sin;
+        mat[2][0] = z * x * one_minus_cos - y * sin;
+        mat[2][1] = z * y * one_minus_cos + x * sin;
+        mat[2][2] = cos + z * z * one_minus_cos;
+        mat[3][3] = 1.0;
+
+        return mat.trans();
+    }
+
+    pub fn viewport_mat(ox: i32, oy: i32, width: i32, height: i32) -> Mat4x4 {
+        let mut mat = Mat4x4::identity();
+        mat[0][0] = width as f32 / 2.0;
+        mat[3][0] = ox as f32 + width as f32 / 2.0;
+        mat[1][1] = height as f32 / 2.0;
+        mat[3][1] = oy as f32 + height as f32 / 2.0;
+        return mat;
+    }
+
+    // V = R*T
+    // T = [  1 , 0 , 0 , -eyex          R = [  Right , 0
+    //        0 , 1 , 0 , -eyey                   UP  , 0
+    //        0 , 0 , 1 , -eyez               - Front , 0
+    //        0 , 0 , 0 ,   1   ]                 0   , 1 ]
+    //V =  [  Right  ,  - Right·eye
+    //          UP   ,  - UP·eye
+    //       -Front  ,   Front·eye
+    //         0     ,       1        ]
+    pub fn view_mat(pos: &Vec3, front: &Vec3, right: &Vec3, up: &Vec3) -> Mat4x4 {
+        #[rustfmt::skip]
+        return Mat4x4::new_with_init([
+            right.x, right.y, right.z, -(*right * *pos),
+            up.x, up.y, up.z, -(*up * *pos),
+            -front.x, -front.y, -front.z, *front * *pos,
+            0.0, 0.0, 0.0, 1.0,
+        ]).trans();
+    }
+
+    //M = [   1/aspect*tan(fov/2),       0      ,         0      ,       0
+    //               0  ,         1/tan(fov/2)  ,         0      ,       0
+    //               0  ,                0      ,  - (f+n)/(f-n) ,  -2fn/(f-n)
+    //               0  ,                0      ,         -1     ,       0     ]
+    pub fn perspective_mat(fov: f32, aspect: f32, near: f32, far: f32) -> Mat4x4 {
+        let mut mat = Mat4x4::new_with_zero();
+        let tan_half_fov = (fov / 2.0).tan();
+        mat[0][0] = 1.0 / (aspect * tan_half_fov);
+        mat[1][1] = 1.0 / tan_half_fov;
+        mat[2][2] = -(far + near) / (far - near);
+        mat[2][3] = -1.0;
+        mat[3][2] = -2.0 * far * near / (far - near);
         return mat;
     }
 

@@ -1,8 +1,6 @@
 use crate::lps::common::math::vec4::Vec4;
 use std::{any::Any, sync::Arc};
 
-pub type Color = Vec4;
-
 pub trait VertexShader<Input, Output> {
     fn handle(&self, vertex: &Input) -> Output;
 
@@ -10,7 +8,7 @@ pub trait VertexShader<Input, Output> {
 }
 
 pub trait PixelShader<Input> {
-    fn handle(&self, pixel_fragment: &Input) -> Color;
+    fn handle(&self, pixel_fragment: &Input) -> Vec4;
 
     fn init_constant_buffer(&mut self, buffer: &Vec<Option<Arc<dyn Any + Send>>>);
 }
@@ -56,10 +54,10 @@ impl<VSInput, VSOutput> PipeLine<VSInput, VSOutput> {
 
         let vertex_shader = self.vertex_shader.as_mut().unwrap();
         vertex_shader.init_constant_buffer(&constant_buffer);
-        return vertex_shader.handle(vertex);
+        vertex_shader.handle(vertex)
     }
 
-    pub fn handle_pixel_shader(&mut self, pixel_fragment: &VSOutput) -> Color {
+    pub fn handle_pixel_shader(&mut self, pixel_fragment: &VSOutput) -> Vec4 {
         if let None = self.pixel_shader {
             panic!("pixel shader is not bound");
         }

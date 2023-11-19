@@ -39,4 +39,4 @@ impl Bus {
 
 pub type BusMutex<'a> = Arc<Mutex<Bus>>;
 pub type ExitNotifyCondVar = Arc<(Mutex<i32>, Condvar)>;
-pub type RenderCompleteNotifyCondVar = Arc<(Mutex<()>, Condvar)>;
+pub type RenderCompleteNotifyCondVar = Arc<(Mutex<i32>, Condvar)>;

@@ -32,8 +32,8 @@ impl RenderUtil {
             (arr[1], arr[2]) = (arr[2], arr[1]);
         }
 
-        if arr[0].0.y > arr[2].0.y {
-            (arr[0], arr[2]) = (arr[2], arr[0]);
+        if arr[0].0.y > arr[1].0.y {
+            (arr[0], arr[1]) = (arr[1], arr[0]);
         }
 
         if (arr[1].0.y - arr[2].0.y).abs() < f32::EPSILON {

@@ -7,6 +7,8 @@ pub enum RenderCommandType {
     Draw = 2,
     SetConstantBuffer = 3,
     Clear = 4,
+    Swap = 5,
+    SetIndexBuffer = 6,
 }
 
 pub trait RenderCmd: Send {

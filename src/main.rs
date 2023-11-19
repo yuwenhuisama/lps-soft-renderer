@@ -4,10 +4,10 @@ use crate::lps::common::math::mat4x4::Mat4x4;
 use crate::lps::common::math::vec2::Vec2;
 use crate::lps::common::math::vec3::Vec3;
 use crate::lps::common::math::vec4::Vec4;
+use crate::lps::common::mesh::Mesh;
 use lps::core::{bus::Bus, cpu::Cpu, gpu::Gpu};
 use lps::rasterize::pixel_shader::CustomPixelShader;
 use lps::rasterize::vertex_shader::CustomVertexShader;
-use std::any::Any;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 
@@ -16,16 +16,95 @@ use crate::lps::rasterize::render_target::RenderTarget;
 use crate::lps::rasterize::vt_input::VertexShaderInput;
 use crate::lps::rasterize::vt_output::VertexShaderOutput;
 
-fn get_viewport_mat(ox: i32, oy: i32, width: i32, height: i32) -> Mat4x4 {
-    let mut mat = Mat4x4::identity();
-    mat[0][0] = width as f32 / 2.0;
-    mat[0][3] = ox as f32 + width as f32 / 2.0;
-    mat[1][1] = height as f32 / 2.0;
-    mat[1][3] = oy as f32 + height as f32 / 2.0;
-    return mat;
+fn create_plane(
+    left_top: &Vec3,
+    left_bottom: &Vec3,
+    right_bottom: &Vec3,
+    right_top: &Vec3,
+    normal: &Vec3,
+) -> Mesh<VertexShaderInput> {
+    #[rustfmt::skip]
+    return Mesh::<VertexShaderInput>::new_with_data(vec![
+        VertexShaderInput::new(Vec4::new(left_top.x, left_top.y, left_top.z, 1.0),
+                               Vec3::new(255.0, 0.0, 0.0),
+                               Vec2::new(0.0, 1.0),
+                               normal.clone()),
+        VertexShaderInput::new(Vec4::new(right_top.x, right_top.y, right_top.z, 1.0),
+                               Vec3::new(0.0, 255.0, 0.0),
+                               Vec2::new(1.0, 1.0),
+                               normal.clone()),
+        VertexShaderInput::new(Vec4::new(right_bottom.x, right_bottom.y, right_bottom.z, 1.0),
+                               Vec3::new(0.0, 0.0, 255.0),
+                               Vec2::new(1.0, 1.0),
+                               normal.clone()),
+        VertexShaderInput::new(Vec4::new(left_bottom.x, left_bottom.y, left_bottom.z, 1.0),
+                               Vec3::new(255.0, 255.0, 0.0),
+                               Vec2::new(0.0, 0.0),
+                               normal.clone()),
+    ], 
+    vec![0, 2, 1, 0, 3, 2]);
 }
 
-fn do_render(cpu: &mut Cpu) {
+fn create_box(center: &Vec3, radius: f32) -> Mesh<VertexShaderInput> {
+    let mut result: Mesh<VertexShaderInput> = Mesh::new_with_data(vec![], vec![]);
+    let front = create_plane(
+        &(*center + Vec3::new(-radius, radius, radius)),
+        &(*center + Vec3::new(-radius, -radius, radius)),
+        &(*center + Vec3::new(radius, -radius, radius)),
+        &(*center + Vec3::new(radius, radius, radius)),
+        &Vec3::new(0.0, 0.0, 1.0),
+    );
+    result.add_mesh(&front);
+
+    let left = create_plane(
+        &(*center + Vec3::new(-radius, radius, -radius)),
+        &(*center + Vec3::new(-radius, -radius, -radius)),
+        &(*center + Vec3::new(-radius, -radius, radius)),
+        &(*center + Vec3::new(-radius, radius, radius)),
+        &Vec3::new(-1.0, 0.0, 0.0),
+    );
+    result.add_mesh(&left);
+
+    let right = create_plane(
+        &(*center + Vec3::new(radius, radius, radius)),
+        &(*center + Vec3::new(radius, -radius, radius)),
+        &(*center + Vec3::new(radius, -radius, -radius)),
+        &(*center + Vec3::new(radius, radius, -radius)),
+        &Vec3::new(1.0, 0.0, 0.0),
+    );
+    result.add_mesh(&right);
+
+    let back = create_plane(
+        &(*center + Vec3::new(radius, radius, -radius)),
+        &(*center + Vec3::new(radius, -radius, -radius)),
+        &(*center + Vec3::new(-radius, -radius, -radius)),
+        &(*center + Vec3::new(-radius, radius, -radius)),
+        &Vec3::new(0.0, 0.0, -1.0),
+    );
+    result.add_mesh(&back);
+
+    let up = create_plane(
+        &(*center + Vec3::new(-radius, radius, -radius)),
+        &(*center + Vec3::new(-radius, radius, radius)),
+        &(*center + Vec3::new(radius, radius, radius)),
+        &(*center + Vec3::new(radius, radius, -radius)),
+        &Vec3::new(0.0, 1.0, 0.0),
+    );
+    result.add_mesh(&up);
+
+    let down = create_plane(
+        &(*center + Vec3::new(-radius, -radius, radius)),
+        &(*center + Vec3::new(-radius, -radius, -radius)),
+        &(*center + Vec3::new(radius, -radius, -radius)),
+        &(*center + Vec3::new(radius, -radius, radius)),
+        &Vec3::new(0.0, -1.0, 0.0),
+    );
+    result.add_mesh(&down);
+
+    return result;
+}
+
+fn create_triangle() -> Mesh<VertexShaderInput> {
     // let v1: VertexShaderInput = VertexShaderInput::new(
     //     Vec4::new(-0.5, -0.5, 0.0, 1.0),
     //     Vec3::new(255.0, 0.0, 0.0),
@@ -68,29 +147,59 @@ fn do_render(cpu: &mut Cpu) {
         Vec3::new(0.0, 0.0, 0.0),
     );
 
-    let render_target = Arc::new(Mutex::new(RenderTarget::new(800, 600)));
-    let vertex_list: Vec<Arc<dyn Any + Send + Sync>> =
-        vec![Arc::new(v1), Arc::new(v2), Arc::new(v3)];
+    let vertex_list = vec![v1, v2, v3];
+    let index_list = vec![0, 1, 2];
 
-    cpu.bind_constant_buffer_mat4x4(0, Mat4x4::identity()); // model matrix
-    cpu.bind_constant_buffer_mat4x4(1, get_viewport_mat(0, 0, 800, 600)); // viewport matrix
-    cpu.bind_constant_buffer_mat4x4(2, Mat4x4::identity()); // proj matrix
+    Mesh::new_with_data(vertex_list, index_list)
+}
+
+fn do_render(cpu: &mut Cpu) {
+    let mesh = create_box(&Vec3::new(0.0, 0.0, 0.0), 0.01);
+    let render_target = Arc::new(Mutex::new(RenderTarget::new(800, 600)));
+
+    let mut angle = 0.0f32;
+    let axis = Vec3::new(1.0, 1.0, 0.0);
+
+    cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_axis_mat(angle.to_radians(), axis)); // model matrix
+    cpu.bind_constant_buffer_mat4x4(
+        1,
+        Mat4x4::view_mat(
+            &Vec3::new(0.0, 0.0, 5.0),
+            &Vec3::new(0.0, 0.0, -1.0),
+            &Vec3::new(1.0, 0.0, 0.0),
+            &Vec3::new(0.0, 1.0, 0.0),
+        ),
+    ); // viewport matrix
+    cpu.bind_constant_buffer_mat4x4(
+        2,
+        Mat4x4::perspective_mat(60.0f32.to_radians(), 800.0 / 600.0, 0.3, 100.0),
+    ); // proj matrix
 
     cpu.bind_render_target(Arc::clone(&render_target));
-    cpu.bind_vertex_buffer(vertex_list);
-    cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
-    cpu.draw();
+    cpu.bind_mesh(&mesh);
 
+    cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
+    cpu.draw(true);
+    cpu.swap();
+    let mut unwrap = render_target.lock().unwrap();
+    unwrap.save("test.png");
+    drop(unwrap);
+
+    angle += 20.0;
+    cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_axis_mat(angle.to_radians() as f32, axis)); // model matrix
+    cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
+    cpu.draw(true);
     cpu.swap();
 
     let mut unwrap = render_target.lock().unwrap();
-    unwrap.save("test.png");
+    unwrap.save("test2.png");
+    drop(unwrap);
 }
 
 fn main() {
     let bus = Arc::new(Mutex::new(Bus::new()));
     let exit_condvar_info = Arc::new((Mutex::<i32>::new(2), Condvar::new()));
-    let render_complete_condvar_info = Arc::new((Mutex::<()>::new(()), Condvar::new()));
+    let render_complete_condvar_info = Arc::new((Mutex::<i32>::new(0), Condvar::new()));
 
     let mut cpu = Cpu::new(&bus, &exit_condvar_info, &render_complete_condvar_info);
     let mut gpu = Gpu::<VertexShaderInput, VertexShaderOutput>::new(
