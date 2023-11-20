@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::lps::common::math::mat4x4::Mat4x4;
+    use crate::lps::common::math::vec4::Vec4;
 
     #[test]
     fn test_matrix_index() {
@@ -42,5 +43,23 @@ mod tests {
         ]);
 
         assert!(mat3 == res);
+    }
+
+    #[test]
+    fn test_matrix_multiply_vec4() {
+        #[rustfmt::skip]
+            let mat1 = Mat4x4::new_with_init([
+            1.0,  2.0,  3.0, 4.0,
+            4.0,  5.0,  6.0, 7.0,
+            7.0,  8.0,  9.0, 10.0,
+            10.0, 11.0, 12.0, 13.0]);
+
+        let vec4 = Vec4::new(1.0, 2.0, 3.0, 4.0);
+
+        let res = mat1 * vec4;
+
+        let right = Vec4::new(30.0, 60.0, 90.0, 120.0);
+
+        assert!(res == right);
     }
 }

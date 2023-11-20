@@ -74,7 +74,7 @@ impl Mat4x4 {
     }
 
     pub fn rotate_axis_mat(angle: f32, axis: Vec3) -> Mat4x4 {
-        let mut mat = Mat4x4::new_with_zero();
+        let mut mat = Mat4x4::identity();
         let cos = angle.cos();
         let sin = angle.sin();
         let one_minus_cos = 1.0 - cos;
@@ -197,17 +197,16 @@ impl Mat4x4 {
     }
 
     fn multiply_vec4(&self, vec: &Vec4) -> Vec4 {
-        let mut res = Vec4::new(0.0, 0.0, 0.0, 0.0);
+        let rhs = vec![vec.x, vec.y, vec.z, vec.w];
+        let mut res = vec![0.0, 0.0, 0.0, 0.0];
 
         for i in 0..self.height() {
-            let idx = i * self.width();
-            res.x += self.matrix[idx] * vec.x;
-            res.y += self.matrix[idx + 1] * vec.y;
-            res.z += self.matrix[idx + 2] * vec.z;
-            res.w += self.matrix[idx + 3] * vec.w;
+            for j in 0..self.width() {
+                res[i] += self.at(i, j) * rhs[j];
+            }
         }
 
-        return res;
+        return Vec4::new(res[0], res[1], res[2], res[3]);
     }
 
     fn to_neg(&self) -> Mat4x4 {

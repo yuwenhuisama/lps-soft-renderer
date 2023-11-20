@@ -145,9 +145,10 @@ where
 
                 // apply perspective division
                 let mut v = vt.position_as_mut().clone();
-                v /= v.z;
+                v /= v.w;
                 v.w = 1.0;
                 v.z = (v.z + 1.0) / 2.0;
+                // println!("v: {:?}", v);
 
                 // apply viewport transform
                 v = viewport_mat * v;

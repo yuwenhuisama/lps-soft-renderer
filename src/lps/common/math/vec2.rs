@@ -33,6 +33,15 @@ impl Vec2 {
     pub fn lerp(v1: Vec2, v2: Vec2, factor: f32) -> Vec2 {
         (1.0 - factor) * v1 + factor * v2
     }
+
+    pub fn len(&self) -> f32 {
+        self.do_dot(self).sqrt()
+    }
+
+    pub fn normal(&self) -> Vec2 {
+        let len = self.len();
+        Vec2::new(self.x / len, self.y / len)
+    }
 }
 
 impl Mul<f32> for Vec2 {

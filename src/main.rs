@@ -56,50 +56,50 @@ fn create_box(center: &Vec3, radius: f32) -> Mesh<VertexShaderInput> {
     );
     result.add_mesh(&front);
 
-    let left = create_plane(
-        &(*center + Vec3::new(-radius, radius, -radius)),
-        &(*center + Vec3::new(-radius, -radius, -radius)),
-        &(*center + Vec3::new(-radius, -radius, radius)),
-        &(*center + Vec3::new(-radius, radius, radius)),
-        &Vec3::new(-1.0, 0.0, 0.0),
-    );
-    result.add_mesh(&left);
+    // let left = create_plane(
+    //     &(*center + Vec3::new(-radius, radius, -radius)),
+    //     &(*center + Vec3::new(-radius, -radius, -radius)),
+    //     &(*center + Vec3::new(-radius, -radius, radius)),
+    //     &(*center + Vec3::new(-radius, radius, radius)),
+    //     &Vec3::new(-1.0, 0.0, 0.0),
+    // );
+    // result.add_mesh(&left);
 
-    let right = create_plane(
-        &(*center + Vec3::new(radius, radius, radius)),
-        &(*center + Vec3::new(radius, -radius, radius)),
-        &(*center + Vec3::new(radius, -radius, -radius)),
-        &(*center + Vec3::new(radius, radius, -radius)),
-        &Vec3::new(1.0, 0.0, 0.0),
-    );
-    result.add_mesh(&right);
+    // let right = create_plane(
+    //     &(*center + Vec3::new(radius, radius, radius)),
+    //     &(*center + Vec3::new(radius, -radius, radius)),
+    //     &(*center + Vec3::new(radius, -radius, -radius)),
+    //     &(*center + Vec3::new(radius, radius, -radius)),
+    //     &Vec3::new(1.0, 0.0, 0.0),
+    // );
+    // result.add_mesh(&right);
 
-    let back = create_plane(
-        &(*center + Vec3::new(radius, radius, -radius)),
-        &(*center + Vec3::new(radius, -radius, -radius)),
-        &(*center + Vec3::new(-radius, -radius, -radius)),
-        &(*center + Vec3::new(-radius, radius, -radius)),
-        &Vec3::new(0.0, 0.0, -1.0),
-    );
-    result.add_mesh(&back);
+    // let back = create_plane(
+    //     &(*center + Vec3::new(radius, radius, -radius)),
+    //     &(*center + Vec3::new(radius, -radius, -radius)),
+    //     &(*center + Vec3::new(-radius, -radius, -radius)),
+    //     &(*center + Vec3::new(-radius, radius, -radius)),
+    //     &Vec3::new(0.0, 0.0, -1.0),
+    // );
+    // result.add_mesh(&back);
 
-    let up = create_plane(
-        &(*center + Vec3::new(-radius, radius, -radius)),
-        &(*center + Vec3::new(-radius, radius, radius)),
-        &(*center + Vec3::new(radius, radius, radius)),
-        &(*center + Vec3::new(radius, radius, -radius)),
-        &Vec3::new(0.0, 1.0, 0.0),
-    );
-    result.add_mesh(&up);
-
-    let down = create_plane(
-        &(*center + Vec3::new(-radius, -radius, radius)),
-        &(*center + Vec3::new(-radius, -radius, -radius)),
-        &(*center + Vec3::new(radius, -radius, -radius)),
-        &(*center + Vec3::new(radius, -radius, radius)),
-        &Vec3::new(0.0, -1.0, 0.0),
-    );
-    result.add_mesh(&down);
+    // let up = create_plane(
+    //     &(*center + Vec3::new(-radius, radius, -radius)),
+    //     &(*center + Vec3::new(-radius, radius, radius)),
+    //     &(*center + Vec3::new(radius, radius, radius)),
+    //     &(*center + Vec3::new(radius, radius, -radius)),
+    //     &Vec3::new(0.0, 1.0, 0.0),
+    // );
+    // result.add_mesh(&up);
+    //
+    // let down = create_plane(
+    //     &(*center + Vec3::new(-radius, -radius, radius)),
+    //     &(*center + Vec3::new(-radius, -radius, -radius)),
+    //     &(*center + Vec3::new(radius, -radius, -radius)),
+    //     &(*center + Vec3::new(radius, -radius, radius)),
+    //     &Vec3::new(0.0, -1.0, 0.0),
+    // );
+    // result.add_mesh(&down);
 
     return result;
 }
@@ -154,13 +154,12 @@ fn create_triangle() -> Mesh<VertexShaderInput> {
 }
 
 fn do_render(cpu: &mut Cpu) {
-    let mesh = create_box(&Vec3::new(0.0, 0.0, 0.0), 0.01);
+    let mesh = create_box(&Vec3::new(0.0, 0.0, 0.0), 0.2);
     let render_target = Arc::new(Mutex::new(RenderTarget::new(800, 600)));
 
     let mut angle = 0.0f32;
-    let axis = Vec3::new(1.0, 1.0, 0.0);
+    // let axis = Vec3::new(1.0, 1.0, 0.0).normal();
 
-    cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_axis_mat(angle.to_radians(), axis)); // model matrix
     cpu.bind_constant_buffer_mat4x4(
         1,
         Mat4x4::view_mat(
@@ -169,31 +168,27 @@ fn do_render(cpu: &mut Cpu) {
             &Vec3::new(1.0, 0.0, 0.0),
             &Vec3::new(0.0, 1.0, 0.0),
         ),
-    ); // viewport matrix
+    ); // view matrix
     cpu.bind_constant_buffer_mat4x4(
         2,
-        Mat4x4::perspective_mat(60.0f32.to_radians(), 800.0 / 600.0, 0.3, 100.0),
+        // Mat4x4::perspective_mat(60.0f32.to_radians(), 800.0 / 600.0, 0.3, 100.0),
+        Mat4x4::identity(),
     ); // proj matrix
 
     cpu.bind_render_target(Arc::clone(&render_target));
     cpu.bind_mesh(&mesh);
 
-    cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
-    cpu.draw(true);
-    cpu.swap();
-    let mut unwrap = render_target.lock().unwrap();
-    unwrap.save("test.png");
-    drop(unwrap);
+    for i in 0..1 {
+        cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_y_mat(45.0f32.to_radians())); // model matrix
+        cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
+        cpu.draw(true);
+        cpu.swap();
 
-    angle += 20.0;
-    cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_axis_mat(angle.to_radians() as f32, axis)); // model matrix
-    cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
-    cpu.draw(true);
-    cpu.swap();
-
-    let mut unwrap = render_target.lock().unwrap();
-    unwrap.save("test2.png");
-    drop(unwrap);
+        let mut unwrap = render_target.lock().unwrap();
+        let file_name = format!("output/output_{}.png", i);
+        unwrap.save(&file_name);
+        angle += 360.0 / 20.0;
+    }
 }
 
 fn main() {

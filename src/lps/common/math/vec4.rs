@@ -40,6 +40,15 @@ impl Vec4 {
     pub fn lerp(v1: Vec4, v2: Vec4, factor: f32) -> Vec4 {
         (1.0 - factor) * v1 + factor * v2
     }
+
+    pub fn len(&self) -> f32 {
+        self.do_dot(self).sqrt()
+    }
+
+    pub fn normal(&self) -> Vec4 {
+        let len = self.len();
+        Vec4::new(self.x / len, self.y / len, self.z / len, self.w / len)
+    }
 }
 
 impl Mul<f32> for Vec4 {
@@ -113,5 +122,11 @@ impl Add<Vec4> for f32 {
 
     fn add(self, rhs: Vec4) -> Self::Output {
         rhs.do_add_scalar(self)
+    }
+}
+
+impl PartialEq for Vec4 {
+    fn eq(&self, other: &Self) -> bool {
+        self.x == other.x && self.y == other.y && self.z == other.z && self.w == other.w
     }
 }
