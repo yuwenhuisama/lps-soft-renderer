@@ -28,7 +28,8 @@ impl VertexShader<VertexShaderInput, VertexShaderOutput> for CustomVertexShader 
         let proj_matrix = self.proj_matrix.as_ref().unwrap();
 
         let world_pos = *model_matrix * vertex.position;
-        let window_pos = *proj_matrix * *view_matrix * world_pos;
+        let vw_pos = *view_matrix * world_pos;
+        let window_pos = *proj_matrix * vw_pos;
         let color = Vec4::new(vertex.color.x, vertex.color.y, vertex.color.z, 1.0);
         let texcoord = vertex.texcoord;
         let normal = vertex.normal;

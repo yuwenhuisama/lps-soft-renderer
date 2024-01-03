@@ -121,7 +121,7 @@ impl Mat4x4 {
             up.x, up.y, up.z, -(*up * *pos),
             -front.x, -front.y, -front.z, *front * *pos,
             0.0, 0.0, 0.0, 1.0,
-        ]).trans();
+        ]);
     }
 
     //M = [   1/aspect*tan(fov/2),       0      ,         0      ,       0

@@ -1,6 +1,7 @@
 use crate::lps::common::math::mat4x4::Mat4x4;
 use crate::lps::common::math::vec4::Vec4;
 use crate::lps::common::mesh::MeshShared;
+use crate::lps::common::texture::Texture;
 use crate::lps::rasterize::render_cmds::clear::ClearCmd;
 use crate::lps::rasterize::render_cmds::draw::DrawCmd;
 use crate::lps::rasterize::render_cmds::render_cmd::RenderCmd;
@@ -85,6 +86,13 @@ impl<'a> Cpu<'a> {
 
     pub fn bind_constant_buffer_vec4(&mut self, index: usize, vec: Vec4) {
         self.add_cmd(SetConstantBufferCmd::new_with_vec4(index, vec));
+    }
+
+    pub fn bind_constant_buffer_texture(&mut self, index: usize, texture: Arc<Mutex<Texture>>) {
+        self.add_cmd(SetConstantBufferCmd::new_with_texture(
+            index,
+            Arc::clone(&texture),
+        ));
     }
 
     pub fn clear(&mut self, color: Vec4) {

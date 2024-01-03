@@ -1,9 +1,10 @@
 use crate::lps::common::math::mat4x4::Mat4x4;
 use crate::lps::common::math::vec4::Vec4;
+use crate::lps::common::texture::Texture;
 use crate::lps::core::gpu::GpuApi;
 use crate::lps::rasterize::render_cmds::render_cmd::{RenderCmd, RenderCommandType};
 use std::any::Any;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub struct SetConstantBufferCmd {
     pub layout_index: usize,
@@ -19,6 +20,16 @@ impl SetConstantBufferCmd {
     }
 
     pub fn new_with_vec4(layout_index: usize, buffer: Vec4) -> SetConstantBufferCmd {
+        SetConstantBufferCmd {
+            layout_index,
+            buffer: Arc::new(buffer),
+        }
+    }
+
+    pub fn new_with_texture(
+        layout_index: usize,
+        buffer: Arc<Mutex<Texture>>,
+    ) -> SetConstantBufferCmd {
         SetConstantBufferCmd {
             layout_index,
             buffer: Arc::new(buffer),

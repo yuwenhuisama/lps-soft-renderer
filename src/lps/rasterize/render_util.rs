@@ -85,6 +85,8 @@ impl RenderUtil {
         y: i32,
         color_left: &Vec4,
         color_right: &Vec4,
+        left_z: f32,
+        right_z: f32,
     ) {
         let mut x0 = left_x;
         let mut x1 = right_x;
@@ -102,10 +104,18 @@ impl RenderUtil {
         for i in 0..length {
             draw_x = x0 + i;
 
+            let factor = i as f32 / length as f32;
             let lerp_color = Vec4::lerp(*color0, *color1, i as f32 / length as f32);
+            let lerp_z = (1.0 - factor) * left_z + factor * right_z;
+
             let color = RenderUtil::vec4_to_color(&lerp_color);
 
-            render_target.draw_point(draw_x, y, &color);
+            let depth = render_target.get_screen_depth(draw_x, y);
+
+            if lerp_z < depth {
+                render_target.draw_point(draw_x, y, &color);
+                render_target.draw_depth(draw_x, y, lerp_z);
+            }
         }
     }
 
@@ -155,6 +165,9 @@ impl RenderUtil {
             let new_color_left = get_color(*left_v, v2, weight);
             let new_color_right = get_color(*right_v, v2, weight);
 
+            let left_z = left_v.position().z;
+            let right_z = right_v.position().z;
+
             RenderUtil::draw_scan_line(
                 render_target,
                 new_left.x as i32,
@@ -162,6 +175,8 @@ impl RenderUtil {
                 new_left.y as i32,
                 &new_color_left,
                 &new_color_right,
+                left_z,
+                right_z,
             );
 
             i -= 1;
@@ -214,6 +229,8 @@ impl RenderUtil {
 
             let new_color_left = get_color(*left_v, v2, weight);
             let new_color_right = get_color(*right_v, v2, weight);
+            let left_z = left_v.position().z;
+            let right_z = right_v.position().z;
             RenderUtil::draw_scan_line(
                 render_target,
                 new_left.x as i32,
@@ -221,6 +238,8 @@ impl RenderUtil {
                 new_left.y as i32,
                 &new_color_left,
                 &new_color_right,
+                left_z,
+                right_z,
             );
 
             i += 1;

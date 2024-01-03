@@ -57,12 +57,17 @@ impl<VSInput, VSOutput> PipeLine<VSInput, VSOutput> {
         vertex_shader.handle(vertex)
     }
 
-    pub fn handle_pixel_shader(&mut self, pixel_fragment: &VSOutput) -> Vec4 {
+    pub fn handle_pixel_shader(
+        &mut self,
+        pixel_fragment: &VSOutput,
+        constant_buffer: &Vec<Option<Arc<dyn Any + Send>>>,
+    ) -> Vec4 {
         if let None = self.pixel_shader {
             panic!("pixel shader is not bound");
         }
 
         let pixel_shader = self.pixel_shader.as_mut().unwrap();
+        pixel_shader.init_constant_buffer(&constant_buffer);
         return pixel_shader.handle(pixel_fragment);
     }
 }
