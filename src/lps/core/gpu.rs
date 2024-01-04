@@ -180,7 +180,7 @@ where
                     v1,
                     v2,
                     |v0: &VSOutput, v1: &VSOutput, weight: f32| {
-                        println!("weight: {:?}", weight);
+                        // println!("weight: {:?}", weight);
                         let color = VSOutput::lerp(v0, v1, weight);
                         let output = pipe_line.handle_pixel_shader(&color, &self.constant_buffer);
                         return output;
@@ -201,7 +201,7 @@ where
                     v2,
                     |v0: &VSOutput, v1: &VSOutput, weight: f32| {
                         let color = VSOutput::lerp(v0, v1, weight);
-                        println!("weight: {:?}", weight);
+                        // println!("weight: {:?}", weight);
                         let output = pipe_line.handle_pixel_shader(&color, &self.constant_buffer);
                         return output;
                     },

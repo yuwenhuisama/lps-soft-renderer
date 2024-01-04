@@ -16,6 +16,8 @@ impl Texture {
         let w = img.width();
         let h = img.height();
 
+        println!("Image format: {:?}", img.color());
+
         // let data: Vec<Color> = (0..w)
         //     .flat_map(|x| {
         //         (0..h).map(move |y| {

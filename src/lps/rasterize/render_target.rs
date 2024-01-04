@@ -28,7 +28,7 @@ impl RenderTarget {
     pub fn clear(&mut self, color: Color) {
         for i in 0..self.width() {
             for j in 0..self.height() {
-                *self.get_pixel(i, j) = color;
+                *self.get_mut_pixel(i, j) = color;
                 *self.get_depth(i, j) = 10000.0;
             }
         }
@@ -46,7 +46,12 @@ impl RenderTarget {
         &mut self.depth_buffer[idx]
     }
 
-    fn get_pixel(&mut self, x: u32, y: u32) -> &mut Color {
+    pub fn get_pixel(&self, x: u32, y: u32) -> &Color {
+        let idx = usize::try_from(y * self.width() + x).unwrap();
+        &self.buffer[idx]
+    }
+
+    fn get_mut_pixel(&mut self, x: u32, y: u32) -> &mut Color {
         let idx = usize::try_from(y * self.width() + x).unwrap();
         &mut self.buffer[idx]
     }
@@ -61,7 +66,7 @@ impl RenderTarget {
             return;
         }
 
-        *self.get_pixel(screen_x, screen_y) = color.clone();
+        *self.get_mut_pixel(screen_x, screen_y) = color.clone();
     }
 
     pub fn draw_depth(&mut self, x: i32, y: i32, depth: f32) {
@@ -83,7 +88,7 @@ impl RenderTarget {
 
         for i in 0..self.width() {
             for j in 0..self.height() {
-                let color = self.get_pixel(i, j);
+                let color = self.get_mut_pixel(i, j);
                 img.set_pixel(
                     i,
                     j,

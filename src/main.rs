@@ -5,10 +5,12 @@ use crate::lps::common::math::vec2::Vec2;
 use crate::lps::common::math::vec3::Vec3;
 use crate::lps::common::math::vec4::Vec4;
 use crate::lps::common::mesh::Mesh;
+use crate::lps::common::render_window::RenderWindow;
 use crate::lps::common::texture::Texture;
 use lps::core::{bus::Bus, cpu::Cpu, gpu::Gpu};
 use lps::rasterize::pixel_shader::CustomPixelShader;
 use lps::rasterize::vertex_shader::CustomVertexShader;
+use std::ops::DerefMut;
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 
@@ -155,6 +157,9 @@ fn create_triangle() -> Mesh<VertexShaderInput> {
 }
 
 fn do_render(cpu: &mut Cpu) {
+    let mut window = RenderWindow::create("test".to_string(), 800, 600);
+    window.init();
+
     let mesh = create_box(&Vec3::new(0.0, 0.0, 0.0), 0.5);
     let render_target = Arc::new(Mutex::new(RenderTarget::new(800, 600)));
     let texture = Arc::new(Mutex::new(Texture::load("./data/wall.jpg")));
@@ -181,7 +186,8 @@ fn do_render(cpu: &mut Cpu) {
     cpu.bind_render_target(Arc::clone(&render_target));
     cpu.bind_mesh(&mesh);
 
-    for i in 0..5 {
+    let mut i = 0;
+    loop {
         let rotate = Mat4x4::rotate_axis_mat(angle.to_radians(), axis.clone());
         // cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_y_mat(45.0f32.to_radians())); // model matrix
         cpu.bind_constant_buffer_mat4x4(0, rotate); // model matrix
@@ -190,9 +196,17 @@ fn do_render(cpu: &mut Cpu) {
         cpu.swap();
 
         let mut unwrap = render_target.lock().unwrap();
-        let file_name = format!("output/output_{}.png", i);
-        unwrap.save(&file_name);
+        // let file_name = format!("output/output_{}.png", i);
+        // unwrap.save(&file_name);
+
+        let exit = window.update(unwrap.deref_mut());
+
         angle += 360.0 / 20.0;
+        i += 1;
+
+        if exit {
+            break;
+        }
     }
 }
 
