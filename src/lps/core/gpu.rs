@@ -45,6 +45,7 @@ impl<'a, VSInput, VSOutput> Gpu<'a, VSInput, VSOutput> {
         bus_mutex: &'a BusMutex<'a>,
         condvar: &'a ExitNotifyCondVar,
         render_complete_condvar: &'a RenderCompleteNotifyCondVar,
+        exit_flag: Arc<Mutex<bool>>,
     ) -> Gpu<'a, VSInput, VSOutput> {
         let mut constant_buffer = vec![];
         for _ in 0..32 {
@@ -59,7 +60,7 @@ impl<'a, VSInput, VSOutput> Gpu<'a, VSInput, VSOutput> {
             index_list: None,
             render_target: None,
             constant_buffer, // 31 is the max constant buffer index
-            exit_flag: Arc::new(Mutex::new(true)),
+            exit_flag,
             render_complete_condvar,
             render_cnt: 0,
         }
@@ -243,7 +244,6 @@ where
     fn start(&mut self) {
         println!("gpu start.");
 
-        let exit_condvar = Arc::clone(&self.exit_condvar);
         let bus_mutex = Arc::clone(&self.bus_mutex);
         let mut exit = self.exit_flag.as_ref().lock().unwrap();
         *exit = false;
@@ -259,7 +259,9 @@ where
             let mut bus = bus_mutex.lock().unwrap();
 
             if bus.empty() {
+                drop(bus);
                 thread::sleep(Duration::from_millis(1));
+                continue;
             }
 
             let result = bus.try_get_cmd();
@@ -268,20 +270,21 @@ where
                 Err(_) => continue,
             };
 
-            print!("gpu get cmd: {:?}\n", cmd.as_ref().cmd_type());
+            // print!("gpu get cmd: {:?}\n", cmd.as_ref().cmd_type());
             cmd.execute(self);
         }
 
-        let (lock, condvar) = exit_condvar.as_ref();
-        let mut cnt = lock.lock().unwrap();
-        *cnt -= 1;
-        condvar.notify_all();
-
+        self.exit();
         println!("gpu exit.")
     }
 
     fn exit(&mut self) {
         let mut exit = self.exit_flag.as_ref().lock().unwrap();
         *exit = true;
+
+        let (lock, condvar) = self.exit_condvar.as_ref();
+        let mut cnt = lock.lock().unwrap();
+        *cnt -= 1;
+        condvar.notify_all();
     }
 }

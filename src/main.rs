@@ -44,8 +44,8 @@ fn create_plane(
                                Vec3::new(255.0, 0.0, 255.0),
                                Vec2::new(0.0, 0.0),
                                normal.clone()),
-    ], 
-    vec![0, 2, 1, 0, 3, 2]);
+    ],
+                                                    vec![0, 2, 1, 0, 3, 2]);
 }
 
 fn create_box(center: &Vec3, radius: f32) -> Mesh<VertexShaderInput> {
@@ -156,8 +156,8 @@ fn create_triangle() -> Mesh<VertexShaderInput> {
     Mesh::new_with_data(vertex_list, index_list)
 }
 
-fn do_render(cpu: &mut Cpu) {
-    let mut window = RenderWindow::create("test".to_string(), 800, 600);
+fn do_render(cpu: &mut Cpu, gpu_exit_mutex: Arc<Mutex<bool>>) {
+    let mut window = RenderWindow::create("lps-soft-renderer".to_string(), 800, 600);
     window.init();
 
     let mesh = create_box(&Vec3::new(0.0, 0.0, 0.0), 0.5);
@@ -186,72 +186,70 @@ fn do_render(cpu: &mut Cpu) {
     cpu.bind_render_target(Arc::clone(&render_target));
     cpu.bind_mesh(&mesh);
 
-    let mut i = 0;
     loop {
         let rotate = Mat4x4::rotate_axis_mat(angle.to_radians(), axis.clone());
-        // cpu.bind_constant_buffer_mat4x4(0, Mat4x4::rotate_y_mat(45.0f32.to_radians())); // model matrix
         cpu.bind_constant_buffer_mat4x4(0, rotate); // model matrix
         cpu.clear(Vec4::new(0.0, 0.0, 0.0, 1.0));
         cpu.draw(true);
         cpu.swap();
 
         let mut unwrap = render_target.lock().unwrap();
-        // let file_name = format!("output/output_{}.png", i);
-        // unwrap.save(&file_name);
 
         let exit = window.update(unwrap.deref_mut());
 
         angle += 360.0 / 20.0;
-        i += 1;
+        angle %= 360.0;
 
         if exit {
             break;
         }
     }
+    println!("cpu exit.");
+    cpu.exit();
+    let mut gpu_exit_flag = gpu_exit_mutex.lock().unwrap();
+    *gpu_exit_flag = true;
 }
 
 fn main() {
     let bus = Arc::new(Mutex::new(Bus::new()));
     let exit_condvar_info = Arc::new((Mutex::<i32>::new(2), Condvar::new()));
     let render_complete_condvar_info = Arc::new((Mutex::<i32>::new(0), Condvar::new()));
+    let gpu_exit_mutex = Arc::new(Mutex::new(true));
 
-    let mut cpu = Cpu::new(&bus, &exit_condvar_info, &render_complete_condvar_info);
+    let fn_ptr = do_render;
+    let mut cpu = Cpu::new(&bus, &exit_condvar_info, &render_complete_condvar_info, fn_ptr, Arc::clone(&gpu_exit_mutex));
     let mut gpu = Gpu::<VertexShaderInput, VertexShaderOutput>::new(
         &bus,
         &exit_condvar_info,
         &render_complete_condvar_info,
+        Arc::clone(&gpu_exit_mutex),
     );
-
-    cpu.init();
-    gpu.init();
-
-    gpu.bind_vertex_shader(Box::new(CustomVertexShader::new()));
-    gpu.bind_pixel_shader(Box::new(CustomPixelShader::new()));
 
     thread::scope(|scope| {
         let t1 = scope.spawn(|| {
-            do_render(&mut cpu);
+            cpu.init();
             cpu.start();
         });
 
         let t2 = scope.spawn(|| {
+            gpu.init();
+            gpu.bind_vertex_shader(Box::new(CustomVertexShader::new()));
+            gpu.bind_pixel_shader(Box::new(CustomPixelShader::new()));
             gpu.start();
         });
 
+        let (lock, cvar) = exit_condvar_info.as_ref();
+        let mut cnt = lock.lock().unwrap();
+        while *cnt > 0 {
+            cnt = cvar.wait(cnt).unwrap();
+            println!("notified.");
+        }
+
         t1.join().unwrap();
         t2.join().unwrap();
-    });
 
-    let (lock, cvar) = exit_condvar_info.as_ref();
-    let mut cnt = lock.lock().unwrap();
-    while *cnt > 0 {
-        println!("waiting.");
-        cnt = cvar.wait(cnt).unwrap();
         println!("waiting exit.");
-    }
-
-    cpu.exit();
-    gpu.exit();
+    });
 
     print!("End run");
 }

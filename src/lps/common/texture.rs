@@ -1,6 +1,5 @@
 use crate::lps::common::color::Color;
 use crate::lps::common::math::vec2::Vec2;
-use image::GenericImageView;
 
 #[derive(Clone)]
 pub struct Texture {
@@ -17,15 +16,6 @@ impl Texture {
         let h = img.height();
 
         println!("Image format: {:?}", img.color());
-
-        // let data: Vec<Color> = (0..w)
-        //     .flat_map(|x| {
-        //         (0..h).map(move |y| {
-        //             let color = img_raw_data.get_pixel(x, y);
-        //             Color::new_rgba(color[0], color[1], color[2], color[3])
-        //         })
-        //     })
-        //     .collect();
 
         let mut data = vec![];
         for y in 0..h {

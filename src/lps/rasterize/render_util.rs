@@ -78,24 +78,26 @@ impl RenderUtil {
         Color::new_rgba(color.x as u8, color.y as u8, color.z as u8, color.w as u8)
     }
 
-    fn draw_scan_line(
+    fn draw_scan_line<Vertex, F>(
         render_target: &mut RenderTarget,
         left_x: i32,
         right_x: i32,
         y: i32,
-        color_left: &Vec4,
-        color_right: &Vec4,
-        left_z: f32,
-        right_z: f32,
-    ) {
+        left_v: &Vertex,
+        right_v: &Vertex,
+        get_color: &mut F,
+    )  where
+        Vertex: VertexShaderOutputPositionAndLerp,
+        F: FnMut(&Vertex, &Vertex, f32) -> Vec4,
+    {
         let mut x0 = left_x;
         let mut x1 = right_x;
-        let mut color0 = color_left;
-        let mut color1 = color_right;
+        let mut left_vertex = left_v;
+        let mut right_vertex = right_v;
 
         if x0 > x1 {
             std::mem::swap(&mut x0, &mut x1);
-            std::mem::swap(&mut color0, &mut color1);
+            std::mem::swap(&mut left_vertex, &mut right_vertex);
         }
 
         let mut draw_x;
@@ -105,8 +107,9 @@ impl RenderUtil {
             draw_x = x0 + i;
 
             let factor = i as f32 / length as f32;
-            let lerp_color = Vec4::lerp(*color0, *color1, i as f32 / length as f32);
-            let lerp_z = (1.0 - factor) * left_z + factor * right_z;
+
+            let lerp_color = get_color(left_vertex, right_vertex, factor);
+            let lerp_z = (1.0 - factor) * left_vertex.position().z + factor * right_vertex.position().z;
 
             let color = RenderUtil::vec4_to_color(&lerp_color);
 
@@ -134,12 +137,13 @@ impl RenderUtil {
         let p2 = Vec2::new(v2.position().x, v2.position().y);
 
         let mut left = if p0.x > p1.x { p0 } else { p1 };
-        let left_v = if p0.x > p1.x { &v0 } else { &v1 };
+        let left_v = if p0.x > p1.x { v0 } else { v1 };
 
         let right = if p0.x > p1.x { p1 } else { p0 };
-        let right_v = if p0.x > p1.x { &v1 } else { &v0 };
+        let right_v = if p0.x > p1.x { v1 } else { v0 };
 
         let top = p2;
+        let top_v = v2;
 
         left.x = left.x.floor();
 
@@ -162,21 +166,17 @@ impl RenderUtil {
             new_left.y = curr_y as f32;
             new_right.y = curr_y as f32;
 
-            let new_color_left = get_color(*left_v, v2, weight);
-            let new_color_right = get_color(*right_v, v2, weight);
+            let new_left_v = Vertex::lerp(left_v, top_v, weight);
+            let new_right_v = Vertex::lerp(right_v, top_v, weight);
 
-            let left_z = left_v.position().z;
-            let right_z = right_v.position().z;
-
-            RenderUtil::draw_scan_line(
+            RenderUtil::draw_scan_line::<Vertex, F>(
                 render_target,
                 new_left.x as i32,
                 new_right.x as i32,
                 new_left.y as i32,
-                &new_color_left,
-                &new_color_right,
-                left_z,
-                right_z,
+                &new_left_v,
+                &new_right_v,
+                get_color,
             );
 
             i -= 1;
@@ -199,12 +199,13 @@ impl RenderUtil {
         let p2 = Vec2::new(v2.position().x, v2.position().y);
 
         let mut left = if p0.x > p1.x { p1 } else { p0 };
-        let left_v = if p0.x > p1.x { &v1 } else { &v0 };
+        let left_v = if p0.x > p1.x { v1 } else { v0 };
 
         let right = if p0.x > p1.x { p0 } else { p1 };
-        let right_v = if p0.x > p1.x { &v0 } else { &v1 };
+        let right_v = if p0.x > p1.x { v0 } else { v1 };
 
         let bottom = p2;
+        let bottom_v = v2;
 
         left.x = left.x.floor();
 
@@ -227,19 +228,17 @@ impl RenderUtil {
             new_left.y = curr_y as f32;
             new_right.y = curr_y as f32;
 
-            let new_color_left = get_color(*left_v, v2, weight);
-            let new_color_right = get_color(*right_v, v2, weight);
-            let left_z = left_v.position().z;
-            let right_z = right_v.position().z;
-            RenderUtil::draw_scan_line(
+            let new_left_v = Vertex::lerp(left_v, bottom_v, weight);
+            let new_right_v = Vertex::lerp(right_v, bottom_v, weight);
+
+            RenderUtil::draw_scan_line::<Vertex, F>(
                 render_target,
                 new_left.x as i32,
                 new_right.x as i32,
                 new_left.y as i32,
-                &new_color_left,
-                &new_color_right,
-                left_z,
-                right_z,
+                &new_left_v,
+                &new_right_v,
+                get_color
             );
 
             i += 1;

@@ -17,12 +17,14 @@ use std::sync::{Arc, Mutex};
 use super::bus::{BusMutex, ExitNotifyCondVar, RenderCompleteNotifyCondVar};
 use super::unit::Unit;
 
-pub struct Cpu<'a> {
+pub struct Cpu<'a>
+{
     bus_mutex: &'a BusMutex<'a>,
     exit_condvar: &'a ExitNotifyCondVar,
-    exit_flag: Arc<Mutex<bool>>,
     render_complete_condvar: &'a RenderCompleteNotifyCondVar,
     render_cnt: i32,
+    render_loop: fn(cpu: &mut Cpu, gpu_exit_mutex: Arc<Mutex<bool>>) -> (),
+    gpu_exit_mutex: Arc<Mutex<bool>>,
 }
 
 impl<'a> Cpu<'a> {
@@ -30,13 +32,16 @@ impl<'a> Cpu<'a> {
         bus_mutex: &'a BusMutex<'a>,
         condvar: &'a ExitNotifyCondVar,
         render_complete_condvar: &'a RenderCompleteNotifyCondVar,
+        render_loop: fn(cpu: &mut Cpu, gpu_exit_mutex: Arc<Mutex<bool>>) -> (),
+        gpu_exit_mutex: Arc<Mutex<bool>>,
     ) -> Cpu<'a> {
         Cpu {
             bus_mutex,
             exit_condvar: condvar,
-            exit_flag: Arc::new(Mutex::new(true)),
             render_complete_condvar,
             render_cnt: 0,
+            render_loop,
+            gpu_exit_mutex,
         }
     }
 
@@ -55,10 +60,10 @@ impl<'a> Cpu<'a> {
         let mut guard = mutex.lock().unwrap();
         let mut gpu_cnt = *guard;
         while self.render_cnt > gpu_cnt {
-            println!("cpu wait for render complete.");
+            // println!("cpu wait for render complete.");
             guard = condvar.wait(guard).unwrap();
             gpu_cnt = *guard;
-            println!("cpu was notified render completed.");
+            // println!("cpu was notified render completed.");
         }
         self.render_cnt = *guard;
     }
@@ -108,31 +113,13 @@ impl<'a> Unit for Cpu<'a> {
     fn init(&mut self) {}
 
     fn start(&mut self) {
-        println!("cpu start.");
-
-        // let mut exit = self.exit_flag.as_ref().lock().unwrap();
-        // *exit = false;
-        //
-        // loop {
-        //     let exit = self.exit_flag.as_ref().lock().unwrap();
-        //     if *exit {
-        //         break;
-        //     }
-        //     drop(exit);
-        // }
-
-        let exit_condvar = ExitNotifyCondVar::clone(self.exit_condvar);
-
-        let (lock, condvar) = exit_condvar.as_ref();
-        let mut cnt = lock.lock().unwrap();
-        *cnt -= 1;
-        condvar.notify_all();
-
-        println!("cpu exit.")
+        (self.render_loop)(self, Arc::clone(&self.gpu_exit_mutex));
     }
 
     fn exit(&mut self) {
-        let mut exit = self.exit_flag.as_ref().lock().unwrap();
-        *exit = true;
+        let (lock, condvar) = self.exit_condvar.as_ref();
+        let mut cnt = lock.lock().unwrap();
+        *cnt -= 1;
+        condvar.notify_all();
     }
 }
